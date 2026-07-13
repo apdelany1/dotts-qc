@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A1830">
+<meta name="description" content="Offline-first produce arrival inspection tool for Dott's Quality Control.">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Dott's Quality Control — Arrival Inspections</title>
+<style>
+:root{
+  --ink:#0C1B33; --ink2:#33435C; --muted:#64708A;
+  --bg:#F4F6F9; --panel:#FFFFFF; --line:#E3E8F0; --line2:#EDF1F6;
+  --accent:#2E5BFF; --accent-dark:#1F47E0; --accent-soft:#E9EEFF;
+  --good:#16A34A; --fair:#E5A50B; --poor:#E5484D;
+  --good-bg:#E6F6EC; --fair-bg:#FCF3DE; --poor-bg:#FDEBEB;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05), 0 2px 8px rgba(16,24,40,.05);
+  --shadow-md:0 4px 10px rgba(16,24,40,.06), 0 12px 32px rgba(16,24,40,.10);
+  --radius:18px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:16px; line-height:1.45;
+  padding-bottom:env(safe-area-inset-bottom);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--accent-soft)}
+#app{max-width:760px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+button{font-family:inherit}
+
+/* ---------- header: frosted, floating ---------- */
+.topbar{
+  background:rgba(244,246,249,.86);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  color:var(--ink); padding:12px 18px;
+  display:flex; align-items:center; gap:12px;
+  position:sticky; top:0; z-index:30;
+  border-bottom:1px solid rgba(16,24,40,.06);
+}
+.topbar .back{
+  background:#fff;border:1px solid var(--line);color:var(--ink);
+  width:38px;height:38px;border-radius:12px;font-size:19px;line-height:1;
+  cursor:pointer;box-shadow:var(--shadow-sm);flex:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease;
+}
+.topbar .back:active{transform:scale(.94)}
+.brand{display:flex;flex-direction:column;min-width:0;flex:1;gap:1px}
+.brand .kicker{
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.brand .title{
+  font-size:18px;font-weight:800;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.topbar .iconbtn{
+  background:#fff;border:1px solid var(--line);color:var(--ink);
+  border-radius:999px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;
+  box-shadow:var(--shadow-sm);transition:transform .12s ease;
+}
+.topbar .iconbtn:active{transform:scale(.96)}
+
+/* ---------- layout ---------- */
+.screen{flex:1;padding:18px 18px 120px}
+.card{
+  background:var(--panel);border:1px solid rgba(16,24,40,.05);border-radius:var(--radius);
+  padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm);
+}
+.card h2{
+  margin:0 0 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);font-weight:800;
+}
+.section-note{font-size:13px;color:var(--muted);margin:2px 0 12px;line-height:1.55}
+
+/* ---------- forms ---------- */
+.field{margin-bottom:14px}
+.field label{
+  display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;margin-bottom:6px;
+}
+.field input[type=text],.field input[type=number],.field input[type=date],
+.field select,.field textarea{
+  width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:13px;
+  font-size:16px;color:var(--ink);background:#fff;font-family:inherit;
+  transition:border-color .15s ease, box-shadow .15s ease;
+  -webkit-appearance:none;appearance:none;
+}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364708A' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
+}
+.field textarea{min-height:96px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(46,91,255,.14);
+}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:420px){.grid2{grid-template-columns:1fr}}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:0;border-radius:15px;font-size:15px;font-weight:700;cursor:pointer;
+  padding:15px 20px;letter-spacing:-.01em;
+  transition:transform .12s ease, box-shadow .15s ease, background .15s ease;
+}
+.btn:active{transform:scale(.975)}
+.btn-primary{
+  background:var(--accent);color:#fff;
+  box-shadow:0 6px 16px rgba(46,91,255,.30), 0 2px 4px rgba(46,91,255,.18);
+}
+.btn-primary:active{background:var(--accent-dark)}
+.btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink);box-shadow:var(--shadow-sm)}
+.btn-danger{background:#fff;border:1px solid #F6CDCF;color:var(--poor);box-shadow:var(--shadow-sm)}
+.btn-block{width:100%}
+.btn-sm{padding:10px 14px;font-size:13px;border-radius:12px}
+.row-actions{display:flex;gap:10px;margin-top:8px}
+
+/* ---------- floating action / dock ---------- */
+.fab-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:linear-gradient(transparent, rgba(244,246,249,.75) 34%, var(--bg) 78%);
+  padding:22px 18px calc(16px + env(safe-area-inset-bottom));
+  display:flex;justify-content:center;pointer-events:none;
+}
+.fab-bar .inner{width:100%;max-width:724px;display:flex;gap:10px}
+.fab-bar .btn{pointer-events:auto;border-radius:999px}
+.fab-bar.raised{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.screen.tabbed{padding-bottom:215px}
+.tabs{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;
+  background:rgba(12,27,51,.94);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  padding:6px;border-radius:999px;box-shadow:var(--shadow-md);
+  display:flex;gap:4px;width:min(92%, 420px);
+}
+.tabs .tab{
+  flex:1;background:none;border:0;color:rgba(255,255,255,.55);
+  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:13px 6px;border-radius:999px;cursor:pointer;
+  transition:background .15s ease, color .15s ease;
+}
+.tabs .tab.on{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+
+/* ---------- inspection list ---------- */
+.insp-item{
+  display:flex;align-items:center;gap:14px;background:var(--panel);
+  border:1px solid rgba(16,24,40,.05);border-radius:16px;padding:16px;
+  margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow-sm);
+  transition:transform .12s ease;
+}
+.insp-item:active{transform:scale(.985)}
+.insp-main{flex:1;min-width:0}
+.insp-main .l1{font-weight:700;font-size:15px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.insp-main .l2{font-size:13px;color:var(--muted);margin-top:3px}
+.empty{
+  text-align:center;color:var(--muted);padding:56px 24px;font-size:14px;line-height:1.6;
+}
+.empty .big{font-size:44px;margin-bottom:12px}
+
+/* ---------- grade language ---------- */
+.pill{
+  display:inline-flex;align-items:center;gap:6px;border-radius:999px;
+  font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:6px 12px;white-space:nowrap;
+}
+.pill .dot,.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.g-good{background:var(--good-bg);color:#0B6B36}.g-good .dot{background:var(--good)}
+.g-fair{background:var(--fair-bg);color:#8A5F04}.g-fair .dot{background:var(--fair)}
+.g-poor{background:var(--poor-bg);color:#9E2A2E}.g-poor .dot{background:var(--poor)}
+.g-none{background:var(--line2);color:var(--muted)}.g-none .dot{background:#B4BCC6}
+.dot-good{background:var(--good)}.dot-fair{background:var(--fair)}.dot-poor{background:var(--poor)}
+
+/* ---------- pallets & samples ---------- */
+.pallet-item{
+  background:var(--panel);border:1px solid rgba(16,24,40,.05);border-radius:16px;
+  padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  box-shadow:var(--shadow-sm);transition:transform .12s ease;
+}
+.pallet-item:active{transform:scale(.985)}
+.pallet-item .num{
+  width:44px;height:44px;border-radius:14px;background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;
+  letter-spacing:-.02em;
+}
+.stat-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.stat-strip span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ---------- defect steppers ---------- */
+.defect-group-title{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  font-weight:800;margin:22px 4px 10px;display:flex;align-items:center;gap:8px;
+}
+.defect-row{
+  display:flex;align-items:center;gap:10px;background:var(--panel);
+  border:1px solid rgba(16,24,40,.05);border-radius:16px;padding:9px 9px 9px 16px;margin-bottom:8px;
+  box-shadow:var(--shadow-sm);
+}
+.defect-row .name{flex:1;font-size:14px;font-weight:600;min-width:0;letter-spacing:-.01em}
+.defect-row .pct{
+  font-size:13px;color:var(--muted);min-width:54px;text-align:right;
+  font-variant-numeric:tabular-nums;font-weight:600;
+}
+.stepper{display:flex;align-items:center;gap:2px}
+.stepper button{
+  width:48px;height:48px;border-radius:999px;border:0;
+  background:var(--line2);font-size:22px;font-weight:600;color:var(--ink);cursor:pointer;
+  transition:transform .1s ease, background .12s ease;
+}
+.stepper button:active{transform:scale(.9);background:var(--line)}
+.stepper .val{
+  min-width:46px;text-align:center;font-weight:800;font-size:18px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.stepper input{
+  width:70px;height:48px;text-align:center;border:1px solid var(--line);border-radius:14px;
+  font-size:16px;font-weight:700;font-family:inherit;font-variant-numeric:tabular-nums;
+}
+.stepper input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(46,91,255,.14)}
+.samplebar{
+  position:sticky;top:64px;z-index:20;
+  background:rgba(244,246,249,.9);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  padding:10px 0;display:flex;align-items:center;gap:10px;
+  margin:0 -2px;border-radius:0 0 14px 14px;
+}
+.samplebar .sums{flex:1;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
+
+/* ---------- report ---------- */
+.report{background:var(--panel);border:1px solid rgba(16,24,40,.05);border-radius:var(--radius);padding:22px 20px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.report-head{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:16px}
+.report-head .rtitle{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.report-head .rsub{font-size:12px;color:var(--muted);margin-top:3px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:13px;margin-bottom:18px}
+.meta-grid .k{color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:1px}
+.meta-grid .v{font-weight:600}
+table.rt{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 16px}
+table.rt th{
+  text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);padding:8px;border-bottom:1px solid var(--line);font-weight:800;
+}
+table.rt td{padding:9px 8px;border-bottom:1px solid var(--line2);font-variant-numeric:tabular-nums}
+table.rt tr.total td{font-weight:800;border-top:1px solid var(--line);border-bottom:0}
+table.rt .num{text-align:right}
+.pie-wrap{display:flex;align-items:center;gap:24px;margin:10px 0 16px;flex-wrap:wrap}
+.legend{font-size:13px}
+.legend div{display:flex;align-items:center;gap:8px;margin:5px 0;font-variant-numeric:tabular-nums}
+.rank-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line2);font-size:14px}
+.rank-row .rname{flex:1}
+.rank-row .rpct{font-weight:700;font-variant-numeric:tabular-nums}
+.rank-row.total{font-weight:800;border-top:1px solid var(--line);border-bottom:0}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.temps-inline{font-size:13px;color:var(--ink2);margin-bottom:14px}
+
+/* ---------- settings ---------- */
+.tol-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tol-row .tname{flex:1;font-size:14px;font-weight:600;min-width:0;letter-spacing:-.01em}
+.tol-row input{
+  width:62px;padding:10px 6px;text-align:center;border:1px solid var(--line);
+  border-radius:11px;font-size:14px;font-family:inherit;font-variant-numeric:tabular-nums;
+}
+.tol-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(46,91,255,.14)}
+.tol-head{display:flex;gap:8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:6px}
+.tol-head .tname{flex:1}
+.tol-head span{width:62px;text-align:center}
+.linkbtn{background:none;border:0;color:var(--accent-dark);font-weight:700;font-size:14px;cursor:pointer;padding:10px 0}
+.del-x{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;border-radius:8px}
+
+.notice{
+  background:#FFF7EC;border:1px solid #F8E3C4;color:#7A5A1E;border-radius:14px;
+  padding:12px 14px;font-size:13px;margin-bottom:14px;line-height:1.5;
+}
+
+/* ---------- photos ---------- */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:12px}
+.photo-cell{position:relative;border:1px solid rgba(16,24,40,.06);border-radius:14px;overflow:hidden;background:var(--line2);box-shadow:var(--shadow-sm)}
+.photo-cell img{width:100%;height:96px;object-fit:cover;display:block}
+.photo-cell .photo-tag{font-size:10px;padding:5px 8px;color:var(--ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff}
+.photo-cell .photo-del{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(12,27,51,.72);color:#fff;font-size:15px;line-height:1;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.rphotos{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.rphotos figure{margin:0;width:calc(50% - 5px);page-break-inside:avoid}
+.rphotos img{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+.rphotos figcaption{font-size:11px;color:var(--ink2);margin-top:4px;line-height:1.3}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important}
+}
+
+/* ---------- print: report only ---------- */
+@media print{
+  body{background:#fff;padding:0}
+  .topbar,.tabs,.fab-bar,.no-print,.notice{display:none !important}
+  .screen{padding:0}
+  .report{border:0;padding:0;box-shadow:none}
+  .card{border:0;box-shadow:none;page-break-inside:avoid}
+  .pill{border:1px solid #999}
+}
+</style>
+<style id="facelift-v1">
+
+/* ================================================================
+   LIGHT FACELIFT — visual polish only; workflow and grading unchanged
+   ================================================================ */
+:root{
+  --ink:#0A1830; --ink2:#34445E; --muted:#6F7D92;
+  --bg:#EEF2F7; --panel:#FFFFFF; --line:#DDE4EE; --line2:#EEF2F7;
+  --accent:#315CFF; --accent-dark:#2348D8; --accent-soft:#E9EEFF;
+  --good:#16A34A; --fair:#D99A08; --poor:#E5484D;
+  --good-bg:#E8F7ED; --fair-bg:#FFF4DB; --poor-bg:#FDEBEC;
+  --shadow-sm:0 1px 2px rgba(10,24,48,.04),0 8px 24px rgba(10,24,48,.07);
+  --shadow-md:0 12px 28px rgba(10,24,48,.14),0 3px 8px rgba(10,24,48,.08);
+  --radius:22px;
+}
+body{
+  background:
+    radial-gradient(circle at 8% -8%,rgba(49,92,255,.16),transparent 32%),
+    radial-gradient(circle at 96% 12%,rgba(113,88,255,.09),transparent 28%),
+    var(--bg);
+  letter-spacing:-.005em;
+}
+#app{position:relative}
+.topbar{
+  background:linear-gradient(135deg,rgba(8,24,48,.985),rgba(24,47,82,.97));
+  color:#fff;
+  padding:calc(12px + env(safe-area-inset-top)) 18px 13px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 10px 28px rgba(8,24,48,.16);
+}
+.brand{gap:2px}
+.brand .kicker{color:rgba(255,255,255,.55);font-size:9px;letter-spacing:.19em}
+.brand .title{color:#fff;font-size:19px;letter-spacing:-.025em}
+.topbar .back,.topbar .iconbtn{
+  background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.13);color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 6px 18px rgba(0,0,0,.12);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.topbar .iconbtn{padding:9px 14px}
+.screen{padding:22px 18px 120px}
+.card,.report{
+  border:1px solid rgba(10,24,48,.055);
+  background:linear-gradient(180deg,#FFFFFF 0%,#FDFEFF 100%);
+  box-shadow:var(--shadow-sm);
+}
+.card{padding:19px;margin-bottom:15px}
+.card h2{
+  display:flex;align-items:center;gap:8px;color:#55647A;
+  letter-spacing:.15em;margin-bottom:14px;
+}
+.card h2::before{
+  content:"";width:4px;height:13px;border-radius:99px;
+  background:linear-gradient(180deg,var(--accent),#7A5CFF);flex:none;
+}
+.section-note{color:#718096}
+.field label{color:#6B778C;font-size:10px;letter-spacing:.115em;margin-bottom:7px}
+.field input[type=text],.field input[type=number],.field input[type=date],
+.field select,.field textarea{
+  background:#F8FAFD;border-color:#E2E8F1;border-radius:14px;
+  box-shadow:inset 0 1px 2px rgba(10,24,48,.025);
+}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:#CDD6E4}
+.field input:focus,.field select:focus,.field textarea:focus{
+  background:#fff;border-color:var(--accent);box-shadow:0 0 0 4px rgba(49,92,255,.13),0 8px 22px rgba(49,92,255,.08);
+}
+.btn{border-radius:16px;min-height:50px;letter-spacing:-.015em}
+.btn-primary{
+  background:linear-gradient(135deg,#315CFF 0%,#5B5AF5 100%);
+  box-shadow:0 10px 24px rgba(49,92,255,.30),inset 0 1px 0 rgba(255,255,255,.22);
+}
+.btn-primary:active{background:linear-gradient(135deg,#2348D8,#4948D5)}
+.btn-ghost{background:rgba(255,255,255,.88);border-color:#DDE4EE}
+.btn-danger{background:rgba(255,255,255,.9)}
+.fab-bar{
+  background:linear-gradient(transparent,rgba(238,242,247,.82) 36%,rgba(238,242,247,.98) 79%);
+  padding-top:27px;
+}
+.fab-bar .btn{border-radius:999px;max-width:724px}
+.tabs{
+  background:rgba(8,24,48,.94);border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 16px 38px rgba(8,24,48,.28),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.tabs .tab{color:rgba(255,255,255,.58)}
+.tabs .tab.on{background:linear-gradient(180deg,#fff,#F2F5FA);color:#0A1830;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+
+/* Home dashboard */
+.home-screen{padding-top:18px}
+.home-hero{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#0A1830 0%,#173865 64%,#315CFF 145%);
+  border:1px solid rgba(255,255,255,.08);border-radius:26px;
+  color:#fff;padding:24px 22px 20px;margin-bottom:22px;
+  box-shadow:0 18px 44px rgba(10,24,48,.22);
+}
+.home-hero::before{
+  content:"";position:absolute;width:180px;height:180px;border-radius:50%;
+  right:-72px;top:-104px;background:rgba(105,119,255,.38);filter:blur(1px);
+}
+.home-hero::after{
+  content:"";position:absolute;width:120px;height:120px;border-radius:50%;
+  right:54px;bottom:-92px;background:rgba(61,216,200,.14);
+}
+.hero-eyebrow{position:relative;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:rgba(255,255,255,.58);margin-bottom:9px}
+.hero-title{position:relative;font-size:24px;line-height:1.08;font-weight:850;letter-spacing:-.035em;max-width:430px}
+.hero-copy{position:relative;color:rgba(255,255,255,.68);font-size:13px;line-height:1.5;margin-top:9px;max-width:520px}
+.hero-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:21px}
+.hero-stat{padding:11px 10px;border-radius:15px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hero-stat strong{display:block;font-size:18px;line-height:1;font-variant-numeric:tabular-nums}
+.hero-stat span{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-top:6px;font-weight:700}
+.section-heading{display:flex;align-items:center;justify-content:space-between;margin:0 3px 11px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#65748A;font-weight:800}
+.section-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 8px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:11px;letter-spacing:0;color:var(--ink2);box-shadow:0 4px 12px rgba(10,24,48,.05)}
+
+.insp-item,.pallet-item{
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#FFFFFF,#FBFCFF);
+  border-color:rgba(10,24,48,.06);box-shadow:var(--shadow-sm);
+}
+.insp-item{border-radius:19px;padding:17px 16px 17px 18px;margin-bottom:11px}
+.insp-item::before{
+  content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 99px 99px 0;
+  background:linear-gradient(180deg,#315CFF,#7A5CFF);opacity:.8;
+}
+.insp-item:hover,.pallet-item:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(10,24,48,.10)}
+.insp-main .l1{font-weight:760;font-size:15px;color:#13233C}
+.insp-main .l2{color:#748197;margin-top:4px}
+.empty{
+  background:rgba(255,255,255,.62);border:1px dashed #CCD6E4;border-radius:22px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);padding:48px 24px;
+}
+.empty .big{filter:saturate(.85);transform:translateY(-2px)}
+.pill{padding:7px 11px;border:1px solid rgba(10,24,48,.035);box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+.pallet-item{border-radius:19px;padding:15px 16px;margin-bottom:11px}
+.pallet-item .num{
+  background:linear-gradient(145deg,#0A1830,#27466F);border-radius:15px;
+  box-shadow:0 7px 16px rgba(10,24,48,.18),inset 0 1px 0 rgba(255,255,255,.13);
+}
+.stat-strip{gap:7px}
+.stat-strip span{background:#F2F5F9;border-radius:999px;padding:4px 8px;color:#66758A;font-size:11px}
+.defect-group-title{color:#5F6E84;margin-top:25px}
+.defect-row{
+  border-radius:18px;padding:9px 9px 9px 17px;margin-bottom:9px;
+  border-color:rgba(10,24,48,.055);box-shadow:0 6px 18px rgba(10,24,48,.055);
+}
+.defect-row .name{font-weight:650;color:#1B2C46}
+.stepper{background:#F1F4F8;border-radius:999px;padding:3px}
+.stepper button{width:44px;height:44px;background:#fff;border:1px solid #E0E6EF;box-shadow:0 3px 8px rgba(10,24,48,.07);font-size:21px}
+.stepper .val{min-width:42px}
+.stepper input{background:#fff}
+.samplebar{
+  top:75px;margin:0 0 14px;padding:11px 13px;border-radius:17px;
+  background:rgba(255,255,255,.88);border:1px solid rgba(10,24,48,.06);
+  box-shadow:0 10px 26px rgba(10,24,48,.10);
+}
+.samplebar .sums{color:#536278}
+.linkbtn{color:#315CFF}
+.notice{background:#FFF9EC;border-color:#F2DEB7;border-radius:16px;box-shadow:0 8px 22px rgba(122,90,30,.06)}
+.photo-cell{border-radius:16px;box-shadow:0 8px 20px rgba(10,24,48,.08)}
+.photo-cell img{height:104px}
+
+/* Report gets a cleaner executive-summary feel */
+.report{padding:20px;border-radius:24px}
+.report-head{
+  margin:-20px -20px 19px;padding:23px 20px 19px;border:0;border-radius:23px 23px 18px 18px;
+  background:linear-gradient(135deg,#0A1830,#1F477B);color:#fff;
+}
+.report-head .rtitle{font-size:23px;letter-spacing:-.035em;color:#fff}
+.report-head .rsub{color:rgba(255,255,255,.58)}
+.meta-grid>div{padding:9px 10px;border-radius:12px;background:#F7F9FC;border:1px solid #EDF1F6}
+.meta-grid .v{color:#21324B}
+table.rt{border:1px solid #E6EBF2;border-radius:14px;border-collapse:separate;border-spacing:0;overflow:hidden}
+table.rt th{background:#F5F7FA}
+table.rt td,table.rt th{padding:10px}
+.rank-row{padding:10px 5px}
+.rank-row .rpct{font-weight:800}
+
+@media(max-width:420px){
+  .screen{padding-left:14px;padding-right:14px}
+  .home-hero{padding:22px 18px 18px;border-radius:23px}
+  .hero-title{font-size:22px}
+  .hero-copy{font-size:12px}
+  .hero-stat{padding:10px 8px}
+  .hero-stat strong{font-size:17px}
+  .insp-item{padding-right:13px}
+  .defect-row{gap:6px;padding-left:14px}
+  .defect-row .pct{min-width:47px}
+  .stepper button{width:42px;height:42px}
+  .stepper .val{min-width:37px}
+}
+@media print{
+  body{background:#fff}
+  .report-head{margin:0 0 16px;padding:0 0 14px;border-radius:0;background:none;color:var(--ink);border-bottom:1px solid var(--line)}
+  .report-head .rtitle{color:var(--ink)}
+  .report-head .rsub{color:var(--muted)}
+  .meta-grid>div{padding:0;background:none;border:0}
+  table.rt{border-radius:0}
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* ================================================================
+   Port QC — offline-first arrival inspection tool (Phase 1 prototype)
+   Single file. No external dependencies (works with zero connectivity).
+   Data model: Inspection → Pallets → Samples → DefectCounts
+               CommodityProfile → DefectDefinitions + Tolerances
+   ================================================================ */
+
+/* ---------------- storage (localStorage with in-memory fallback) --- */
+const DB_KEY = "portqc-v1";
+let memoryOnly = false;
+let memStore = null;
+function loadStore(){
+  try{
+    const raw = localStorage.getItem(DB_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ memoryOnly = true; return memStore; }
+}
+function saveStore(){
+  if(memoryOnly){ memStore = store; return; }
+  try{ localStorage.setItem(DB_KEY, JSON.stringify(store)); }
+  catch(e){ memoryOnly = true; memStore = store; }
+}
+const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (n,d=2) => (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toFixed(d).replace(/\.?0+$/,"") || "0";
+
+/* ---------------- default commodity profile (citrus / mandarins) --- */
+function citrusProfile(){
+  return {
+    id:"citrus", name:"Citrus (Mandarins)",
+    sumTol:{ quality:{good:0, fair:5, poor:10}, condition:{good:0, fair:5, poor:10} },
+    defects:[
+      // QUALITY (cosmetic / inherent)
+      {key:"brix", name:"Brix (°Bx)", type:"quality", measure:true, higherIsBetter:true, tol:{good:10, fair:9.95, poor:9.9}},
+      {key:"openapp", name:"Open Appearance (1–3)", type:"quality", measure:true, higherIsBetter:false, tol:{good:1, fair:2, poor:3}},
+      {key:"green", name:"Green fruit", type:"quality", tol:{good:0, fair:2, poor:4}},
+      {key:"scars", name:"Scars", type:"quality", tol:{good:0, fair:3, poor:6}},
+      {key:"mech", name:"Mechanical Damage", type:"quality", tol:{good:0, fair:3, poor:6}},
+      {key:"oleo", name:"Oleocellosis", type:"quality", tol:{good:0, fair:3, poor:6}},
+      {key:"seeds", name:"Seeds", type:"quality", tol:{good:0, fair:1, poor:2}},
+      {key:"underw", name:"Underweight", type:"quality", tol:{good:2, fair:1.5, poor:1}, higherIsBetter:false},
+      // CONDITION (deterioration — worsens in transit/storage)
+      {key:"cubing", name:"Cubing", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"decay", name:"Decay", type:"condition", tol:{good:0, fair:0.01, poor:1}},
+      {key:"freeze", name:"Freeze Damage", type:"condition", tol:{good:0, fair:1, poor:3}},
+      {key:"bruise", name:"Bruising", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"stemend", name:"Stem end Browning", type:"condition", tol:{good:0, fair:3, poor:5}},
+      {key:"puff", name:"Puffiness", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"soft", name:"Soft", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"skinbd", name:"Skin Breakdown", type:"condition", tol:{good:0, fair:3, poor:5}},
+      {key:"others", name:"Others", type:"condition", tol:{good:0, fair:3, poor:6}}
+    ]
+  };
+}
+function seed(){
+  return { commodities:[citrusProfile()], inspections:[] };
+}
+let store = loadStore() || seed();
+
+/* ---------------- grading engine ----------------
+   Grade codes: 0 = Good, 1 = Fair, 2 = Poor, -1 = no data
+   Rule: value <= good → Good; value >= poor → Poor; else Fair.
+   (Reversed for higher-is-better measurements like Brix.)      */
+const GRADE = ["Good","Fair","Poor"];
+const GCLS  = ["g-good","g-fair","g-poor"];
+const DCLS  = ["dot-good","dot-fair","dot-poor"];
+function gradeValue(v, tol, higherIsBetter){
+  if(v==null || isNaN(v)) return -1;
+  if(higherIsBetter){
+    if(v >= tol.good) return 0;
+    if(v <= tol.poor) return 2;
+    return 1;
+  }
+  if(v <= tol.good) return 0;
+  if(v >= tol.poor) return 2;
+  return 1;
+}
+function commodityOf(insp){
+  return store.commodities.find(c=>c.id===insp.commodityId) || store.commodities[0];
+}
+/* per-sample computation */
+function computeSample(sample, prof){
+  const size = Number(sample.size)||0;
+  let sumQ=0, sumC=0, worst=-1;
+  const perDefect = {};
+  prof.defects.forEach(d=>{
+    if(d.measure){
+      const v = sample.measures && sample.measures[d.key];
+      const g = (v===""||v==null) ? -1 : gradeValue(Number(v), d.tol, d.higherIsBetter);
+      perDefect[d.key] = {value:(v===""||v==null)?null:Number(v), pct:null, grade:g};
+      if(g>worst) worst=g;
+      return;
+    }
+    const cnt = Number(sample.counts && sample.counts[d.key])||0;
+    const pct = size>0 ? cnt/size*100 : 0;
+    if(d.type==="quality") sumQ+=pct; else sumC+=pct;
+    const g = size>0 ? gradeValue(pct, d.tol, d.higherIsBetter) : -1;
+    perDefect[d.key] = {value:cnt, pct, grade:g};
+    if(g>worst) worst=g;
+  });
+  if(size>0){
+    const gq = gradeValue(sumQ, prof.sumTol.quality, false);
+    const gc = gradeValue(sumC, prof.sumTol.condition, false);
+    if(gq>worst) worst=gq;
+    if(gc>worst) worst=gc;
+  }
+  return {size, sumQ, sumC, perDefect, grade: size>0?Math.max(worst,0):-1};
+}
+/* pallet rollup: aggregate counts across samples */
+function computePallet(p, prof){
+  let size=0, sumQ=0, sumC=0, n=0;
+  const agg={};
+  (p.samples||[]).forEach(s=>{
+    const cs = computeSample(s, prof);
+    if(cs.size>0){ n++; size+=cs.size; sumQ+=cs.sumQ; sumC+=cs.sumC; }
+    prof.defects.forEach(d=>{
+      if(d.measure) return;
+      agg[d.key]=(agg[d.key]||0) + (Number(s.counts&&s.counts[d.key])||0);
+    });
+  });
+  const avgQ = n? sumQ/n : 0, avgC = n? sumC/n : 0;
+  let worst=-1;
+  if(size>0){
+    prof.defects.forEach(d=>{
+      if(d.measure) return;
+      const pct = agg[d.key]/size*100;
+      const g = gradeValue(pct, d.tol, d.higherIsBetter);
+      if(g>worst) worst=g;
+    });
+    const gq=gradeValue(avgQ, prof.sumTol.quality,false);
+    const gc=gradeValue(avgC, prof.sumTol.condition,false);
+    if(gq>worst)worst=gq; if(gc>worst)worst=gc;
+  }
+  return {samples:n, fruit:size, avgQ, avgC, agg, grade:size>0?Math.max(worst,0):-1};
+}
+/* shipment rollup */
+function computeInspection(insp){
+  const prof = commodityOf(insp);
+  const pallets = (insp.pallets||[]).map(p=>({p, c:computePallet(p, prof)}));
+  const byGrade = [ {pallets:0,cases:0}, {pallets:0,cases:0}, {pallets:0,cases:0} ];
+  let gradedPallets=0, totalCases=0, totalFruit=0;
+  const aggAll={}; let avgQsum=0, avgCsum=0, avgN=0;
+  pallets.forEach(({p,c})=>{
+    const cases = Number(p.cases)||0;
+    totalCases += cases;
+    if(c.grade>=0){
+      gradedPallets++;
+      byGrade[c.grade].pallets++;
+      byGrade[c.grade].cases += cases;
+      totalFruit += c.fruit;
+      avgQsum+=c.avgQ; avgCsum+=c.avgC; avgN++;
+      Object.keys(c.agg).forEach(k=> aggAll[k]=(aggAll[k]||0)+c.agg[k]);
+    }
+  });
+  const rank = {quality:[], condition:[]};
+  let rq=0, rc=0;
+  prof.defects.forEach(d=>{
+    if(d.measure) return;
+    const pct = totalFruit>0 ? (aggAll[d.key]||0)/totalFruit*100 : 0;
+    if(pct>0){
+      const item={name:d.name, pct, grade:gradeValue(pct,d.tol,d.higherIsBetter)};
+      rank[d.type].push(item);
+    }
+    if(d.type==="quality") rq+=pct; else rc+=pct;
+  });
+  rank.quality.sort((a,b)=>b.pct-a.pct);
+  rank.condition.sort((a,b)=>b.pct-a.pct);
+  let overall=-1;
+  if(gradedPallets>0){
+    overall = 0;
+    pallets.forEach(({c})=>{ if(c.grade>overall) overall=c.grade; });
+  }
+  return {prof, pallets, byGrade, gradedPallets, totalCases, totalFruit,
+          rank, sumQ:rq, sumC:rc,
+          gq: totalFruit>0?gradeValue(rq,prof.sumTol.quality,false):-1,
+          gc: totalFruit>0?gradeValue(rc,prof.sumTol.condition,false):-1,
+          overall};
+}
+function pill(g, label){
+  if(g<0) return '<span class="pill g-none"><span class="dot"></span>' + (label||"No data") + '</span>';
+  return '<span class="pill '+GCLS[g]+'"><span class="dot"></span>'+(label||GRADE[g])+'</span>';
+}
+</script>
+<script>
+"use strict";
+/* ---------------- routing & render ---------------- */
+let route = {view:"home"};
+function go(r){
+  route = r;
+  try{ history.pushState(r, ""); }catch(e){}
+  render(); window.scrollTo(0,0);
+}
+function getInsp(id){ return store.inspections.find(i=>i.id===id); }
+const $app = () => document.getElementById("app");
+
+function topbar(title, kicker, backRoute, rightHtml){
+  const back = backRoute ? '<button class="back" onclick=\'go('+JSON.stringify(backRoute)+')\' aria-label="Back">&#8592;</button>' : "";
+  return '<div class="topbar">'+back+
+    '<div class="brand"><span class="kicker">'+esc(kicker||"Dott's Quality Control")+'</span>'+
+    '<span class="title">'+esc(title)+'</span></div>'+(rightHtml||"")+'</div>';
+}
+function storageNotice(){
+  return memoryOnly ? '<div class="notice">Device storage is unavailable in this browser session, so changes may be lost. Open the hosted app in normal Safari or Chrome rather than private browsing.</div>' : "";
+}
+
+/* ---------------- HOME: saved inspections ---------------- */
+/* an inspection is pristine if the user never entered anything into it */
+function isPristine(i){
+  const m = i.meta||{};
+  return (!i.pallets || !i.pallets.length)
+    && (!i.temps || !i.temps.some(t=>String(t).trim()!==""))
+    && !(m.specie||m.vessel||m.container||m.warehouse||m.did||m.notes)
+    && m.type==="Arrival Inspection";
+}
+function renderHome(){
+  /* silently discard accidental taps on "New inspection" — nothing typed, nothing lost */
+  const kept = store.inspections.filter(i=>!isPristine(i));
+  if(kept.length !== store.inspections.length){ store.inspections = kept; saveStore(); }
+  const list = store.inspections.slice().sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  const totalPallets = list.reduce((n,i)=>n+(i.pallets||[]).length,0);
+  const graded = list.filter(i=>computeInspection(i).overall>=0).length;
+  const hero = '<div class="home-hero">'+
+    '<div class="hero-eyebrow">Field inspection workspace</div>'+
+    '<div class="hero-title">Quality control, ready wherever the shipment lands.</div>'+
+    '<div class="hero-copy">Capture pallets, samples, defects and photo evidence in one focused workflow.</div>'+
+    '<div class="hero-stats">'+
+      '<div class="hero-stat"><strong>'+list.length+'</strong><span>Inspections</span></div>'+
+      '<div class="hero-stat"><strong>'+totalPallets+'</strong><span>Pallets</span></div>'+
+      '<div class="hero-stat"><strong>'+graded+'</strong><span>Graded</span></div>'+
+    '</div></div>';
+  let items;
+  if(!list.length){
+    items = '<div class="empty"><div class="big">&#128230;</div>No inspections yet.<br>Start your first arrival inspection below.</div>';
+  } else {
+    items = list.map(i=>{
+      const c = computeInspection(i);
+      const m = i.meta||{};
+      const badge = c.overall<0 ? pill(-1,"Draft") : pill(c.overall);
+      return '<div class="insp-item" onclick=\'go({view:"inspection",id:"'+i.id+'",tab:"details"})\'>'+
+        '<div class="insp-main">'+
+          '<div class="l1">'+esc(m.specie||"(no specie)")+' &middot; '+esc(m.container||"no container")+'</div>'+
+          '<div class="l2">'+esc(m.date||"no date")+' &middot; '+esc(m.vessel||"")+' &middot; '+(i.pallets||[]).length+' pallets</div>'+
+        '</div>'+badge+'</div>';
+    }).join("");
+  }
+  $app().innerHTML =
+    topbar("Arrival Inspections","Dott's Quality Control",null,
+      '<button class="iconbtn" onclick=\'go({view:"settings"})\'>Settings</button>')+
+    '<div class="screen home-screen">'+storageNotice()+hero+
+      '<div class="section-heading"><span>Recent inspections</span><span class="section-count">'+list.length+'</span></div>'+items+'</div>'+
+    '<div class="fab-bar"><div class="inner">'+
+      '<button class="btn btn-primary btn-block" onclick="newInspection()">+ Start new inspection</button>'+
+    '</div></div>';
+}
+function newInspection(){
+  const insp = {
+    id:uid(), createdAt:Date.now(), commodityId:store.commodities[0].id,
+    meta:{ type:"Arrival Inspection", specie:"", vessel:"", container:"",
+           warehouse:"", date:new Date().toISOString().slice(0,10), did:"", notes:"" },
+    temps:[], pallets:[]
+  };
+  store.inspections.push(insp); saveStore();
+  go({view:"inspection", id:insp.id, tab:"details"});
+}
+function deleteInspection(id){
+  if(!confirm("Delete this inspection? This cannot be undone.")) return;
+  store.inspections = store.inspections.filter(i=>i.id!==id);
+  saveStore();
+  deletePhotosWhere(p=>p.inspId===id);
+  go({view:"home"});
+}
+
+/* ---------------- INSPECTION SHELL (tabs) ---------------- */
+function renderInspection(){
+  const insp = getInsp(route.id);
+  if(!insp){ go({view:"home"}); return; }
+  const m = insp.meta;
+  const tab = route.tab || "details";
+  let body = "";
+  if(tab==="details") body = detailsBody(insp);
+  if(tab==="pallets") body = palletsBody(insp);
+  if(tab==="report")  body = reportBody(insp);
+  const tabs = ["details","pallets","report"].map(t=>
+    '<button class="tab '+(t===tab?"on":"")+'" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"'+t+'"})\'>'+t+'</button>').join("");
+  $app().innerHTML =
+    topbar(m.container||m.specie||"New inspection", m.type||"Inspection", {view:"home"},
+      tab==="report" ? '<button class="iconbtn" onclick="window.print()">Print / PDF</button>' : "")+
+    '<div class="screen tabbed">'+body+'</div>'+
+    '<div class="tabs">'+tabs+'</div>';
+}
+
+/* ---------------- TAB 1: details form ---------------- */
+function fieldRow(label, key, insp, type, placeholder){
+  const v = insp.meta[key]||"";
+  return '<div class="field"><label>'+label+'</label>'+
+    '<input type="'+(type||"text")+'" value="'+esc(v)+'" placeholder="'+esc(placeholder||"")+'" '+
+    'onchange=\'setMeta("'+insp.id+'","'+key+'",this.value)\'></div>';
+}
+function setMeta(id,key,val){ const i=getInsp(id); if(i){ i.meta[key]=val; saveStore(); } }
+function setCommodity(id,cid){ const i=getInsp(id); if(i){ i.commodityId=cid; saveStore(); } }
+function detailsBody(insp){
+  const opts = store.commodities.map(c=>
+    '<option value="'+c.id+'"'+(c.id===insp.commodityId?" selected":"")+'>'+esc(c.name)+'</option>').join("");
+  const temps = (insp.temps||[]).map((t,ix)=>
+    '<div class="tol-row"><div class="tname">Pulp temp '+(ix+1)+'</div>'+
+    '<input type="number" step="0.1" value="'+esc(t)+'" onchange=\'setTemp("'+insp.id+'",'+ix+',this.value)\'> \u00B0C'+
+    '<button class="del-x" onclick=\'delTemp("'+insp.id+'",'+ix+')\'>&times;</button></div>').join("");
+  return storageNotice()+
+  '<div class="card"><h2>Shipment details</h2>'+
+    fieldRow("Inspection type","type",insp)+
+    '<div class="grid2">'+
+      fieldRow("Specie","specie",insp,"text","e.g. Mandarins")+
+      '<div class="field"><label>Commodity profile</label><select onchange=\'setCommodity("'+insp.id+'",this.value)\'>'+opts+'</select></div>'+
+      fieldRow("Vessel / Airline","vessel",insp,"text","e.g. 3067 JAZAN V.2614N")+
+      fieldRow("Container no.","container",insp,"text","e.g. HLBU6149803")+
+      fieldRow("Warehouse","warehouse",insp,"text","e.g. CWPL")+
+      fieldRow("Inspection date","date",insp,"date")+
+      fieldRow("DID","did",insp,"text","Document ID")+
+    '</div></div>'+
+  '<div class="card"><h2>Pulp temperatures</h2>'+ (temps||"") +
+    '<button class="linkbtn" onclick=\'addTemp("'+insp.id+'")\'>+ Add temperature reading</button></div>'+
+  '<div class="card"><h2>Notes</h2>'+
+    '<div class="field"><textarea placeholder="Free observations\u2026" onchange=\'setMeta("'+insp.id+'","notes",this.value)\'>'+esc(insp.meta.notes||"")+'</textarea></div></div>'+
+  '<button class="btn btn-danger btn-block no-print" onclick=\'deleteInspection("'+insp.id+'")\'>Delete inspection</button>';
+}
+function addTemp(id){ const i=getInsp(id); i.temps=i.temps||[]; i.temps.push(""); saveStore(); render(); }
+function setTemp(id,ix,v){ const i=getInsp(id); i.temps[ix]=v; saveStore(); }
+function delTemp(id,ix){ const i=getInsp(id); i.temps.splice(ix,1); saveStore(); render(); }
+
+/* ---------------- TAB 2: pallets & samples ---------------- */
+function palletsBody(insp){
+  const prof = commodityOf(insp);
+  if(route.palletId){
+    const p = insp.pallets.find(x=>x.id===route.palletId);
+    if(p) return route.sampleId ? sampleBody(insp,p,prof) : palletDetail(insp,p,prof);
+  }
+  const items = (insp.pallets||[]).map((p,ix)=>{
+    const c = computePallet(p, prof);
+    return '<div class="pallet-item" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'"})\'>'+
+      '<div class="num">'+(ix+1)+'</div>'+
+      '<div class="insp-main"><div class="l1">'+esc(p.label||("Pallet "+(ix+1)))+(p.exporter?' \u00B7 '+esc(p.exporter):'')+'</div>'+
+      '<div class="stat-strip"><span>'+c.samples+' samples</span><span>'+esc(p.cases||0)+' cases</span>'+
+      '<span>Q '+fmt(c.avgQ)+'%</span><span>C '+fmt(c.avgC)+'%</span></div></div>'+pill(c.grade)+'</div>';
+  }).join("");
+  return (items || '<div class="empty"><div class="big">&#127818;</div>No pallets yet.<br>Add the first pallet to start sampling.</div>')+
+    '<div class="fab-bar raised"><div class="inner"><button class="btn btn-primary btn-block" onclick=\'addPallet("'+insp.id+'")\'>+ Add pallet</button></div></div>';
+}
+function addPallet(id){
+  const i=getInsp(id);
+  const p={id:uid(), label:"Pallet "+((i.pallets||[]).length+1), exporter:"", variety:"", grower:"", size:"", cases:"", samples:[]};
+  i.pallets.push(p); saveStore();
+  go({view:"inspection",id:id,tab:"pallets",palletId:p.id});
+}
+function setPallet(id,pid,key,val){
+  const p=getInsp(id).pallets.find(x=>x.id===pid); if(p){ p[key]=val; saveStore(); }
+}
+function delPallet(id,pid){
+  if(!confirm("Delete this pallet and its samples?")) return;
+  const i=getInsp(id); i.pallets=i.pallets.filter(x=>x.id!==pid); saveStore();
+  deletePhotosWhere(p=>p.palletId===pid);
+  go({view:"inspection",id:id,tab:"pallets"});
+}
+function palletDetail(insp,p,prof){
+  const c = computePallet(p, prof);
+  setTimeout(()=>loadPalletPhotos(insp.id,p.id),0);
+  const tagOpts = ["General","Pallet Label","Case Net Weight","Tare Box","Temperature"]
+    .concat(prof.defects.map(d=>d.name))
+    .map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
+  const pf = (label,key,type,ph)=>'<div class="field"><label>'+label+'</label>'+
+    '<input type="'+(type||"text")+'" value="'+esc(p[key]||"")+'" placeholder="'+esc(ph||"")+'" onchange=\'setPallet("'+insp.id+'","'+p.id+'","'+key+'",this.value)\'></div>';
+  const samples=(p.samples||[]).map((s,ix)=>{
+    const cs=computeSample(s,prof);
+    return '<div class="pallet-item" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'",sampleId:"'+s.id+'"})\'>'+
+      '<div class="num" style="background:#33435C">S'+(ix+1)+'</div>'+
+      '<div class="insp-main"><div class="l1">Sample '+(ix+1)+' \u00B7 '+cs.size+' fruit</div>'+
+      '<div class="stat-strip"><span>Qual '+fmt(cs.sumQ)+'%</span><span>Cond '+fmt(cs.sumC)+'%</span></div></div>'+pill(cs.grade)+'</div>';
+  }).join("");
+  return '<button class="linkbtn" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets"})\'>&#8592; All pallets</button>'+
+  '<div class="card"><h2>Pallet details '+pill(c.grade)+'</h2><div class="grid2">'+
+    pf("Pallet no. / label","label")+pf("Exporter","exporter")+
+    pf("Variety","variety")+pf("Grower / Ranch","grower")+
+    pf("Size / count","size")+pf("Cases on pallet","cases","number")+
+  '</div></div>'+
+  '<div class="card"><h2>Samples</h2>'+(samples||'<div class="section-note">No samples yet. A sample is a set of fruit pulled from this pallet and checked defect by defect.</div>')+
+  '</div>'+
+  '<div class="card"><h2>Photos</h2>'+
+    '<div class="field"><label>Tag next photo as</label><select id="photo-tag">'+tagOpts+'</select></div>'+
+    '<div class="row-actions">'+
+      '<button class="btn btn-primary" style="flex:1.4" onclick=\'triggerPhoto("photo-cam")\'>&#128247; Take photo</button>'+
+      '<button class="btn btn-ghost" style="flex:1" onclick=\'triggerPhoto("photo-gal")\'>Gallery</button>'+
+    '</div>'+
+    '<input type="file" id="photo-cam" accept="image/*" capture="environment" style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this)\'>'+
+    '<input type="file" id="photo-gal" accept="image/*" style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this)\'>'+
+    '<div class="photo-grid" id="photo-grid"></div></div>'+
+  '<button class="btn btn-danger btn-block" onclick=\'delPallet("'+insp.id+'","'+p.id+'")\'>Delete pallet</button>'+
+  '<div class="fab-bar raised"><div class="inner"><button class="btn btn-primary btn-block" onclick=\'addSample("'+insp.id+'","'+p.id+'")\'>+ Add sample</button></div></div>';
+}
+function addSample(id,pid){
+  const p=getInsp(id).pallets.find(x=>x.id===pid);
+  const s={id:uid(), size:50, counts:{}, measures:{}};
+  p.samples.push(s); saveStore();
+  go({view:"inspection",id:id,tab:"pallets",palletId:pid,sampleId:s.id});
+}
+function delSample(id,pid,sid){
+  if(!confirm("Delete this sample?")) return;
+  const p=getInsp(id).pallets.find(x=>x.id===pid);
+  p.samples=p.samples.filter(s=>s.id!==sid); saveStore();
+  go({view:"inspection",id:id,tab:"pallets",palletId:pid});
+}
+</script>
+<script>
+"use strict";
+/* ---------------- sample defect entry (steppers) ---------------- */
+function sampleBody(insp,p,prof){
+  const s = p.samples.find(x=>x.id===route.sampleId);
+  if(!s) return palletDetail(insp,p,prof);
+  const cs = computeSample(s,prof);
+  const row = d=>{
+    if(d.measure){
+      const v = s.measures && s.measures[d.key];
+      return '<div class="defect-row" id="dr-'+d.key+'">'+
+        '<div class="name">'+esc(d.name)+'</div>'+
+        '<div class="pct" id="pct-'+d.key+'"></div>'+
+        '<div class="stepper"><input type="number" step="0.1" inputmode="decimal" value="'+esc(v==null?"":v)+'" '+
+        'onchange=\'setMeasure("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\'></div></div>';
+    }
+    const cnt = Number(s.counts && s.counts[d.key])||0;
+    const pct = cs.perDefect[d.key].pct;
+    return '<div class="defect-row" id="dr-'+d.key+'">'+
+      '<div class="name">'+esc(d.name)+'</div>'+
+      '<div class="pct" id="pct-'+d.key+'">'+fmt(pct)+'%</div>'+
+      '<div class="stepper">'+
+        '<button onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",-1)\' aria-label="minus">&minus;</button>'+
+        '<span class="val" id="val-'+d.key+'">'+cnt+'</span>'+
+        '<button onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",1)\' aria-label="plus">+</button>'+
+      '</div></div>';
+  };
+  const q = prof.defects.filter(d=>d.type==="quality").map(row).join("");
+  const c = prof.defects.filter(d=>d.type==="condition").map(row).join("");
+  return '<button class="linkbtn" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'"})\'>&#8592; '+esc(p.label||"Pallet")+'</button>'+
+    '<div class="samplebar">'+
+      '<div class="sums" id="sample-sums">Qual '+fmt(cs.sumQ)+'% \u00B7 Cond '+fmt(cs.sumC)+'%</div>'+
+      '<span id="sample-pill">'+pill(cs.grade)+'</span></div>'+
+    '<div class="card"><div class="field"><label>Sample size (fruit inspected)</label>'+
+      '<input type="number" inputmode="numeric" value="'+esc(s.size)+'" onchange=\'setSize("'+insp.id+'","'+p.id+'","'+s.id+'",this.value)\'></div></div>'+
+    '<div class="defect-group-title">Quality defects <span class="dot dot-fair" style="background:#8FA6B2"></span></div>'+q+
+    '<div class="defect-group-title">Condition defects <span class="dot dot-poor" style="background:#8FA6B2"></span></div>'+c+
+    '<div style="height:8px"></div>'+
+    '<button class="btn btn-danger btn-block" onclick=\'delSample("'+insp.id+'","'+p.id+'","'+s.id+'")\'>Delete sample</button>';
+}
+function refreshSampleLive(insp,p,s,prof){
+  const cs = computeSample(s,prof);
+  const sums=document.getElementById("sample-sums");
+  if(sums) sums.textContent = "Qual "+fmt(cs.sumQ)+"% \u00B7 Cond "+fmt(cs.sumC)+"%";
+  const pl=document.getElementById("sample-pill");
+  if(pl) pl.innerHTML = pill(cs.grade);
+  prof.defects.forEach(d=>{
+    const el=document.getElementById("pct-"+d.key);
+    if(el && !d.measure) el.textContent = fmt(cs.perDefect[d.key].pct)+"%";
+    const vl=document.getElementById("val-"+d.key);
+    if(vl && !d.measure) vl.textContent = Number(s.counts&&s.counts[d.key])||0;
+  });
+}
+function findSample(id,pid,sid){
+  const insp=getInsp(id); const p=insp.pallets.find(x=>x.id===pid);
+  return {insp,p,s:p.samples.find(x=>x.id===sid),prof:commodityOf(insp)};
+}
+function bump(id,pid,sid,key,delta){
+  const {insp,p,s,prof}=findSample(id,pid,sid);
+  s.counts=s.counts||{};
+  s.counts[key]=Math.max(0,(Number(s.counts[key])||0)+delta);
+  saveStore(); refreshSampleLive(insp,p,s,prof);
+}
+function setMeasure(id,pid,sid,key,val){
+  const {insp,p,s,prof}=findSample(id,pid,sid);
+  s.measures=s.measures||{}; s.measures[key]=val;
+  saveStore(); refreshSampleLive(insp,p,s,prof);
+}
+function setSize(id,pid,sid,val){
+  const {insp,p,s,prof}=findSample(id,pid,sid);
+  s.size=Math.max(0,Number(val)||0);
+  saveStore(); refreshSampleLive(insp,p,s,prof);
+}
+
+/* ---------------- TAB 3: report ---------------- */
+function pieSVG(g,f,p){
+  const total=g+f+p;
+  if(total<=0) return '<svg width="150" height="150" viewBox="0 0 150 150"><circle cx="75" cy="75" r="60" fill="#F0F2F5"/><text x="75" y="80" text-anchor="middle" font-size="12" fill="#5C707C">No data</text></svg>';
+  const colors=["#16A34A","#E5A50B","#E5484D"], vals=[g,f,p];
+  let a0=-Math.PI/2, out="";
+  vals.forEach((v,i)=>{
+    if(v<=0) return;
+    const frac=v/total;
+    if(frac>=0.9999){ out+='<circle cx="75" cy="75" r="60" fill="'+colors[i]+'"/>'; a0+=Math.PI*2; return; }
+    const a1=a0+frac*Math.PI*2;
+    const x0=75+60*Math.cos(a0), y0=75+60*Math.sin(a0);
+    const x1=75+60*Math.cos(a1), y1=75+60*Math.sin(a1);
+    const large=frac>0.5?1:0;
+    out+='<path d="M75,75 L'+x0.toFixed(1)+','+y0.toFixed(1)+' A60,60 0 '+large+' 1 '+x1.toFixed(1)+','+y1.toFixed(1)+' Z" fill="'+colors[i]+'"/>';
+    a0=a1;
+  });
+  return '<svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="Grade distribution">'+out+'<circle cx="75" cy="75" r="30" fill="#fff"/></svg>';
+}
+function reportBody(insp){
+  const m=insp.meta, r=computeInspection(insp);
+  setTimeout(()=>loadReportPhotos(insp),0);
+  const gp=r.byGrade;
+  const pctOf=c => r.totalCases>0 ? fmt(c/r.totalCases*100,1)+"%" : "\u2014";
+  const scoreRows = [0,1,2].map(g=>
+    (gp[g].pallets||gp[g].cases) ?
+    '<tr><td><span class="dot '+DCLS[g]+'"></span> '+GRADE[g]+'</td><td class="num">'+gp[g].cases+'</td><td class="num">'+gp[g].pallets+'</td><td class="num">'+pctOf(gp[g].cases)+'</td></tr>' : ""
+  ).join("");
+  const rankList=(items,total,tg)=>{
+    if(!items.length && total===0) return '<div class="section-note">None recorded.</div>';
+    return items.map(it=>'<div class="rank-row"><span class="dot '+ (it.grade>=0?DCLS[it.grade]:"") +'"></span><span class="rname">'+esc(it.name)+'</span><span class="rpct">'+fmt(it.pct)+'%</span></div>').join("")+
+      '<div class="rank-row total"><span class="dot '+(tg>=0?DCLS[tg]:"")+'"></span><span class="rname">TOTAL</span><span class="rpct">'+fmt(total)+'%</span></div>';
+  };
+  const detail=r.pallets.map(({p,c},ix)=>
+    '<tr><td>'+esc(p.label||("Pallet "+(ix+1)))+'</td><td>'+esc(p.exporter||"")+'</td><td>'+esc(p.variety||"")+'</td>'+
+    '<td>'+esc(p.grower||"")+'</td><td class="num">'+esc(p.size||"")+'</td><td class="num">'+esc(p.cases||0)+'</td>'+
+    '<td class="num">'+c.samples+'</td><td class="num">'+fmt(c.avgQ)+'</td><td class="num">'+fmt(c.avgC)+'</td>'+
+    '<td>'+(c.grade>=0?'<span class="dot '+DCLS[c.grade]+'"></span> '+GRADE[c.grade]:'\u2014')+'</td></tr>'
+  ).join("");
+  const temps=(insp.temps||[]).filter(t=>t!=="").map(t=>fmt(Number(t),1)+"\u00B0C").join(" \u00B7 ");
+  return '<div class="report">'+
+    '<div class="report-head"><div class="rtitle">'+esc(m.type||"Inspection Report")+'</div>'+
+    '<div class="rsub">Dott\u2019s Quality Control Prototype \u00B7 generated '+new Date().toLocaleDateString()+'</div></div>'+
+    '<div class="meta-grid">'+
+      '<div><div class="k">Specie</div><div class="v">'+esc(m.specie||"\u2014")+'</div></div>'+
+      '<div><div class="k">Vessel / Airline</div><div class="v">'+esc(m.vessel||"\u2014")+'</div></div>'+
+      '<div><div class="k">Container</div><div class="v">'+esc(m.container||"\u2014")+'</div></div>'+
+      '<div><div class="k">Warehouse</div><div class="v">'+esc(m.warehouse||"\u2014")+'</div></div>'+
+      '<div><div class="k">Inspection date</div><div class="v">'+esc(m.date||"\u2014")+'</div></div>'+
+      '<div><div class="k">DID</div><div class="v">'+esc(m.did||"\u2014")+'</div></div>'+
+    '</div>'+
+    (temps?'<div class="temps-inline"><strong>Pulp temps:</strong> '+temps+'</div>':'')+
+    '<div style="margin-bottom:12px">Overall: '+pill(r.overall)+'</div>'+
+
+    '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Score summary</h2>'+
+    '<table class="rt"><tr><th>Grade</th><th class="num">Cases</th><th class="num">Pallets</th><th class="num">%</th></tr>'+
+    (scoreRows||'<tr><td colspan="4" style="color:var(--muted)">No graded pallets yet \u2014 add samples in the Pallets tab.</td></tr>')+
+    '<tr class="total"><td>Total</td><td class="num">'+r.totalCases+'</td><td class="num">'+(insp.pallets||[]).length+'</td><td class="num">'+(r.totalCases>0?"100%":"\u2014")+'</td></tr></table>'+
+
+    '<div class="pie-wrap">'+pieSVG(gp[0].cases,gp[1].cases,gp[2].cases)+
+      '<div class="legend">'+[0,1,2].map(g=>'<div><span class="dot '+DCLS[g]+'"></span>'+GRADE[g]+' \u2014 '+gp[g].cases+' cases ('+pctOf(gp[g].cases)+')</div>').join("")+'</div></div>'+
+
+    '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Quality defect ranking</h2>'+
+    rankList(r.rank.quality, r.sumQ, r.gq)+
+    '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:18px">Condition defect ranking</h2>'+
+    rankList(r.rank.condition, r.sumC, r.gc)+
+
+    '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:18px">Pallet detail</h2>'+
+    '<div class="scroll-x"><table class="rt"><tr><th>Pallet</th><th>Exporter</th><th>Variety</th><th>Grower</th><th class="num">Size</th><th class="num">Cases</th><th class="num">Samples</th><th class="num">Qual %</th><th class="num">Cond %</th><th>Grade</th></tr>'+
+    (detail||'<tr><td colspan="10" style="color:var(--muted)">No pallets.</td></tr>')+'</table></div>'+
+    (m.notes?'<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:18px">Notes</h2><div style="font-size:14px;white-space:pre-wrap">'+esc(m.notes)+'</div>':'')+
+    '<div id="report-photos"></div>'+
+  '</div>'+
+  '<div class="card no-print"><h2>Export</h2><div class="section-note">Print / PDF uses your phone\u2019s built-in print dialog \u2014 choose \u201CSave as PDF\u201D. Works fully offline, and photos print inside the report with their pallet and tag captions.</div>'+
+  '<button class="btn btn-ghost btn-block" onclick="window.print()">Download PDF report</button></div>';
+}
+
+/* ---------------- SETTINGS: commodity profiles ---------------- */
+function renderSettings(){
+  if(route.commodityId){ renderCommodity(); return; }
+  const items = store.commodities.map(c=>
+    '<div class="insp-item" onclick=\'go({view:"settings",commodityId:"'+c.id+'"})\'>'+
+    '<div class="insp-main"><div class="l1">'+esc(c.name)+'</div>'+
+    '<div class="l2">'+c.defects.length+' defects \u00B7 tap to edit tolerances</div></div><span>&#8250;</span></div>').join("");
+  $app().innerHTML = topbar("Settings","Commodity profiles",{view:"home"})+
+    '<div class="screen">'+storageNotice()+items+
+    '<button class="btn btn-ghost btn-block" onclick="addCommodity()">+ New commodity profile</button>'+
+    '<div class="section-note" style="margin-top:14px">Each profile holds the defect list and the Good / Fair / Poor thresholds used for auto-grading. Duplicate the citrus profile as a starting point for other fruits.</div>'+
+    '<div class="card" style="margin-top:14px"><h2>Install &amp; offline use</h2>'+
+    '<div class="section-note">Install this site on the inspection device after opening it once online. The app shell will then open without service. Inspection records and photos remain on this browser/device; hosting does not synchronize them between phones.</div>'+
+    '<button class="btn btn-ghost btn-block" id="install-app-btn" onclick="installApp()">Install app / instructions</button></div>'+
+    '<div class="card" style="margin-top:14px"><h2>Data backup</h2>'+
+    '<div class="section-note">Export saves every inspection and profile to a single file in Downloads \u2014 do this at the end of each inspection day, and send it off the phone when on WiFi. Import restores a backup (replaces what\u2019s on this phone). Photos aren\u2019t included in the backup file \u2014 they stay on the phone and print inside the PDF report.</div>'+
+    '<div class="row-actions">'+
+      '<button class="btn btn-ghost" style="flex:1" onclick="exportBackup()">Export backup</button>'+
+      '<button class="btn btn-ghost" style="flex:1" onclick="document.getElementById(\'imp-file\').click()">Import backup</button>'+
+    '</div><input type="file" id="imp-file" accept=".json,application/json" style="display:none" onchange="importBackup(this)"></div>'+
+    '</div>';
+}
+function addCommodity(){
+  const name = prompt("Name for the new commodity (e.g. Grapes, Avocados):");
+  if(!name) return;
+  const c = citrusProfile();
+  c.id = uid(); c.name = name;
+  store.commodities.push(c); saveStore();
+  go({view:"settings",commodityId:c.id});
+}
+function delCommodity(cid){
+  if(store.commodities.length<=1){ alert("At least one commodity profile is required."); return; }
+  if(!confirm("Delete this commodity profile?")) return;
+  store.commodities = store.commodities.filter(c=>c.id!==cid);
+  saveStore(); go({view:"settings"});
+}
+function renderCommodity(){
+  const c = store.commodities.find(x=>x.id===route.commodityId);
+  if(!c){ go({view:"settings"}); return; }
+  const tolRow=(d,ix)=>'<div class="tol-row"><div class="tname">'+esc(d.name)+(d.measure?' <span style="color:var(--muted);font-weight:400">(measured)</span>':'')+'</div>'+
+    ["good","fair","poor"].map(k=>'<input type="number" step="0.01" value="'+esc(d.tol[k])+'" onchange=\'setTol("'+c.id+'",'+ix+',"'+k+'",this.value)\'>').join("")+
+    '<button class="del-x" onclick=\'delDefect("'+c.id+'",'+ix+')\'>&times;</button></div>';
+  const group=type=>c.defects.map((d,ix)=>({d,ix})).filter(x=>x.d.type===type).map(x=>tolRow(x.d,x.ix)).join("");
+  const head='<div class="tol-head"><div class="tname"></div><span>Good</span><span>Fair</span><span>Poor</span><span style="width:30px"></span></div>';
+  const sumRow=(label,t)=>'<div class="tol-row"><div class="tname">'+label+'</div>'+
+    ["good","fair","poor"].map(k=>'<input type="number" step="0.01" value="'+esc(t[k])+'" onchange=\'setSumTol("'+c.id+'","'+(label.indexOf("Qual")>=0?"quality":"condition")+'","'+k+'",this.value)\'>').join("")+
+    '<span style="width:30px"></span></div>';
+  $app().innerHTML = topbar(c.name,"Tolerance table",{view:"settings"})+
+    '<div class="screen">'+
+    '<div class="card"><h2>Profile name</h2><div class="field"><input type="text" value="'+esc(c.name)+'" onchange=\'setCommodityName("'+c.id+'",this.value)\'></div></div>'+
+    '<div class="card"><h2>Sum tolerances (%)</h2>'+head+
+      sumRow("Sum. Qual. Defects (%)",c.sumTol.quality)+
+      sumRow("Sum. Cond. Defects (%)",c.sumTol.condition)+'</div>'+
+    '<div class="card"><h2>Quality defects</h2>'+head+group("quality")+
+      '<button class="linkbtn" onclick=\'addDefect("'+c.id+'","quality")\'>+ Add quality defect</button></div>'+
+    '<div class="card"><h2>Condition defects</h2>'+head+group("condition")+
+      '<button class="linkbtn" onclick=\'addDefect("'+c.id+'","condition")\'>+ Add condition defect</button></div>'+
+    '<div class="section-note">Grading rule: value \u2264 Good threshold \u2192 Good; value \u2265 Poor threshold \u2192 Poor; in between \u2192 Fair. Brix is reversed (higher is better). All values editable.</div>'+
+    '<button class="btn btn-danger btn-block" onclick=\'delCommodity("'+c.id+'")\'>Delete profile</button></div>';
+}
+function setCommodityName(cid,v){ const c=store.commodities.find(x=>x.id===cid); c.name=v; saveStore(); }
+function setTol(cid,ix,k,v){ const c=store.commodities.find(x=>x.id===cid); c.defects[ix].tol[k]=Number(v); saveStore(); }
+function setSumTol(cid,type,k,v){ const c=store.commodities.find(x=>x.id===cid); c.sumTol[type][k]=Number(v); saveStore(); }
+function addDefect(cid,type){
+  const name=prompt("Defect name:"); if(!name) return;
+  const c=store.commodities.find(x=>x.id===cid);
+  c.defects.push({key:uid(), name:name, type:type, tol:{good:0,fair:3,poor:6}});
+  saveStore(); render();
+}
+function delDefect(cid,ix){
+  const c=store.commodities.find(x=>x.id===cid);
+  if(!confirm('Remove "'+c.defects[ix].name+'" from this profile?')) return;
+  c.defects.splice(ix,1); saveStore(); render();
+}
+
+/* ---------------- photos: IndexedDB with in-memory fallback ---------------- */
+let idb=null, photosMemOnly=false;
+const photoMem = new Map();
+function openPhotoDB(){
+  return new Promise(res=>{
+    if(photosMemOnly) return res(null);
+    if(idb) return res(idb);
+    try{
+      const req = indexedDB.open("portqc-photos", 1);
+      req.onupgradeneeded = e => { e.target.result.createObjectStore("photos", {keyPath:"id"}); };
+      req.onsuccess = e => { idb = e.target.result; res(idb); };
+      req.onerror = () => { photosMemOnly = true; res(null); };
+    }catch(e){ photosMemOnly = true; res(null); }
+  });
+}
+async function putPhoto(p){
+  const db = await openPhotoDB();
+  if(!db){ photoMem.set(p.id, p); return; }
+  return new Promise(res=>{
+    try{
+      const tx = db.transaction("photos","readwrite");
+      tx.objectStore("photos").put(p);
+      tx.oncomplete = res; tx.onerror = res; tx.onabort = res;
+    }catch(e){ photoMem.set(p.id,p); res(); }
+  });
+}
+async function getPhotosBy(fn){
+  const db = await openPhotoDB();
+  if(!db) return Array.from(photoMem.values()).filter(fn).sort((a,b)=>a.createdAt-b.createdAt);
+  return new Promise(res=>{
+    try{
+      const rq = db.transaction("photos","readonly").objectStore("photos").getAll();
+      rq.onsuccess = () => res((rq.result||[]).filter(fn).sort((a,b)=>a.createdAt-b.createdAt));
+      rq.onerror = () => res([]);
+    }catch(e){ res([]); }
+  });
+}
+async function deletePhotoById(id){
+  const db = await openPhotoDB();
+  if(!db){ photoMem.delete(id); return; }
+  return new Promise(res=>{
+    try{
+      const tx = db.transaction("photos","readwrite");
+      tx.objectStore("photos").delete(id);
+      tx.oncomplete = res; tx.onerror = res;
+    }catch(e){ res(); }
+  });
+}
+async function deletePhotosWhere(fn){
+  const list = await getPhotosBy(fn);
+  for(const p of list) await deletePhotoById(p.id);
+}
+/* compress to max 1200px JPEG so a full inspection stays small */
+function compressImage(file){
+  return new Promise(res=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 1200;
+      const s = Math.min(1, max/Math.max(img.width, img.height));
+      const w = Math.round(img.width*s), h = Math.round(img.height*s);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); res(null); };
+    img.src = url;
+  });
+}
+function triggerPhoto(id){ const el=document.getElementById(id); if(el) el.click(); }
+async function handlePhoto(inspId, palletId, input){
+  const f = input.files && input.files[0];
+  input.value = "";
+  if(!f) return;
+  const sel = document.getElementById("photo-tag");
+  const tag = sel ? sel.value : "General";
+  const dataUrl = await compressImage(f);
+  if(!dataUrl){ alert("Couldn't read that image."); return; }
+  await putPhoto({ id:uid(), inspId, palletId, tag, dataUrl, createdAt:Date.now() });
+  loadPalletPhotos(inspId, palletId);
+}
+async function loadPalletPhotos(inspId, palletId){
+  const grid = document.getElementById("photo-grid");
+  if(!grid) return;
+  const photos = await getPhotosBy(p=>p.palletId===palletId);
+  grid.innerHTML = photos.length ? photos.map(ph=>
+    '<div class="photo-cell"><img src="'+ph.dataUrl+'" alt="'+esc(ph.tag)+'">'+
+    '<button class="photo-del" onclick=\'removePhoto("'+ph.id+'","'+inspId+'","'+palletId+'")\'>&times;</button>'+
+    '<div class="photo-tag">'+esc(ph.tag)+'</div></div>').join("")
+    : '<div class="section-note" style="grid-column:1/-1">No photos yet.</div>';
+}
+async function removePhoto(id, inspId, palletId){
+  if(!confirm("Delete this photo?")) return;
+  await deletePhotoById(id);
+  loadPalletPhotos(inspId, palletId);
+}
+async function loadReportPhotos(insp){
+  const box = document.getElementById("report-photos");
+  if(!box) return;
+  const photos = await getPhotosBy(p=>p.inspId===insp.id);
+  if(!photos.length){ box.innerHTML=""; return; }
+  const labelOf = pid => {
+    const ix = (insp.pallets||[]).findIndex(p=>p.id===pid);
+    const p = insp.pallets[ix];
+    return p ? (p.label || ("Pallet "+(ix+1))) : "Pallet";
+  };
+  const order = new Map((insp.pallets||[]).map((p,ix)=>[p.id,ix]));
+  photos.sort((a,b)=>(order.get(a.palletId)??99)-(order.get(b.palletId)??99) || a.createdAt-b.createdAt);
+  box.innerHTML =
+    '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:18px">Pictures</h2>'+
+    '<div class="rphotos">'+photos.map(ph=>
+      '<figure><img src="'+ph.dataUrl+'" alt=""><figcaption>'+esc(labelOf(ph.palletId))+': '+esc(ph.tag)+'</figcaption></figure>'
+    ).join("")+'</div>';
+}
+
+/* ---------------- backup: export / import ---------------- */
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(store,null,1)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "dotts-qc-backup-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function importBackup(input){
+  const f = input.files && input.files[0];
+  input.value = "";
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const data = JSON.parse(r.result);
+      if(!Array.isArray(data.commodities) || !Array.isArray(data.inspections)) throw new Error("bad");
+      if(!confirm("Replace everything on this phone with this backup ("+data.inspections.length+" inspections, "+data.commodities.length+" profiles)?")) return;
+      store = data; saveStore(); go({view:"home"});
+      alert("Backup restored.");
+    }catch(e){ alert("That file doesn't look like a Dott's QC backup."); }
+  };
+  r.readAsText(f);
+}
+
+/* ---------------- dispatcher ---------------- */
+function render(){
+  if(route.view==="home") renderHome();
+  else if(route.view==="inspection") renderInspection();
+  else if(route.view==="settings") renderSettings();
+  else renderHome();
+}
+/* ---------------- PWA install & offline shell ---------------- */
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+window.addEventListener("appinstalled", ()=>{ deferredInstallPrompt = null; });
+async function installApp(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{ await deferredInstallPrompt.userChoice; }catch(e){}
+    deferredInstallPrompt = null;
+    return;
+  }
+  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isiOS){
+    alert("On iPhone/iPad: open this page in Safari, tap Share, then choose Add to Home Screen.");
+  }else{
+    alert("In Chrome or Edge: open the browser menu and choose Install app or Add to Home screen. If it is already installed, open it from your home screen.");
+  }
+}
+if("serviceWorker" in navigator && location.protocol !== "file:"){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(err=>console.warn("Service worker registration failed", err));
+  });
+}
+
+try{ history.replaceState(route, ""); }catch(e){}
+window.addEventListener("popstate", e=>{
+  route = (e.state && e.state.view) ? e.state : {view:"home"};
+  render(); window.scrollTo(0,0);
+});
+render();
+</script>
+</body>
+</html>

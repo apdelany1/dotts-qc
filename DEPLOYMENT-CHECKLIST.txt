@@ -1,0 +1,12 @@
+DOTT'S QC — GITHUB PAGES CHECKLIST
+
+[ ] Create a PUBLIC GitHub repository named dotts-qc
+[ ] Upload every item in this folder to the repository root
+[ ] Confirm index.html is visible at the top level
+[ ] Settings > Pages > Deploy from a branch
+[ ] Select main and /(root), then Save
+[ ] Open the github.io address on the phone while online
+[ ] Add the app to the home screen
+[ ] Turn on airplane mode and verify the app reopens
+[ ] Enter a TEST inspection and export a backup
+[ ] Do not use grades as official until tolerances are validated
