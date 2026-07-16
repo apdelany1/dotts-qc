@@ -263,6 +263,27 @@ table.rt .num{text-align:right}
 .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .temps-inline{font-size:13px;color:var(--ink2);margin-bottom:14px}
 
+/* ---------- temperatures ---------- */
+.temp-readings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.temp-readings.ambient{grid-template-columns:repeat(2,minmax(0,1fr))}
+.temp-reading-card{
+  border:1px solid var(--line);border-radius:15px;padding:13px;background:#F8FAFD;
+}
+.temp-reading-title{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:10px}
+.temp-unit-row{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:8px;margin-top:8px}
+.temp-unit-row label{font-size:12px;font-weight:800;color:var(--muted);text-align:center}
+.temp-unit-row input{
+  width:100%;min-width:0;padding:11px 10px;border:1px solid var(--line);border-radius:11px;
+  font-size:16px;font-weight:750;color:var(--ink);background:#fff;font-family:inherit;
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield;
+}
+.temp-unit-row input::-webkit-inner-spin-button,.temp-unit-row input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.temp-unit-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(46,91,255,.14)}
+.temp-section-note{font-size:12px;color:var(--muted);line-height:1.45;margin:-2px 0 12px}
+@media(max-width:620px){
+  .temp-readings,.temp-readings.ambient{grid-template-columns:1fr}
+}
+
 /* ---------- settings ---------- */
 .tol-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .tol-row .tname{flex:1;font-size:14px;font-weight:600;min-width:0;letter-spacing:-.01em}
@@ -831,10 +852,16 @@ function storageNotice(){
 
 /* ---------------- HOME: saved inspections ---------------- */
 /* an inspection is pristine if the user never entered anything into it */
+function hasTemperatureData(i){
+  const pairHasValue = p => p && (String(p.f??"").trim()!=="" || String(p.c??"").trim()!=="");
+  return (Array.isArray(i.pulpTemps) && i.pulpTemps.some(pairHasValue))
+    || (Array.isArray(i.ambientTemps) && i.ambientTemps.some(pairHasValue))
+    || (Array.isArray(i.temps) && i.temps.some(t=>String(t).trim()!==""));
+}
 function isPristine(i){
   const m = i.meta||{};
   return (!i.pallets || !i.pallets.length)
-    && (!i.temps || !i.temps.some(t=>String(t).trim()!==""))
+    && !hasTemperatureData(i)
     && !(m.specie||m.vessel||m.container||m.warehouse||m.did||m.notes)
     && m.type==="Arrival Inspection";
 }
@@ -883,7 +910,9 @@ function newInspection(){
     id:uid(), createdAt:Date.now(), commodityId:store.commodities[0].id,
     meta:{ type:"Arrival Inspection", specie:"", vessel:"", container:"",
            warehouse:"", date:new Date().toISOString().slice(0,10), did:"", notes:"" },
-    temps:[], pallets:[]
+    pulpTemps:Array.from({length:3},()=>({f:"",c:""})),
+    ambientTemps:Array.from({length:2},()=>({f:"",c:""})),
+    pallets:[]
   };
   store.inspections.push(insp); saveStore();
   go({view:"inspection", id:insp.id, tab:"details"});
@@ -924,13 +953,78 @@ function fieldRow(label, key, insp, type, placeholder){
 }
 function setMeta(id,key,val){ const i=getInsp(id); if(i){ i.meta[key]=val; saveStore(); } }
 function setCommodity(id,cid){ const i=getInsp(id); if(i){ i.commodityId=cid; saveStore(); render(); } }
+function tempDisplay(n){
+  if(!Number.isFinite(n)) return "";
+  return (Math.round(n*10)/10).toFixed(1);
+}
+function blankTempPair(){ return {f:"",c:""}; }
+function normalizeTempPair(pair){
+  if(pair && typeof pair==="object" && !Array.isArray(pair)){
+    return {f:String(pair.f??""), c:String(pair.c??"")};
+  }
+  if(pair==null || pair==="") return blankTempPair();
+  const c=Number(pair);
+  return Number.isFinite(c) ? {c:tempDisplay(c),f:tempDisplay(c*9/5+32)} : blankTempPair();
+}
+function ensureTemperatureFields(insp){
+  let changed=false;
+  if(!Array.isArray(insp.pulpTemps)){
+    const legacy=Array.isArray(insp.temps)?insp.temps:[];
+    insp.pulpTemps=Array.from({length:3},(_,ix)=>normalizeTempPair(legacy[ix]));
+    changed=true;
+  }else{
+    const next=Array.from({length:3},(_,ix)=>normalizeTempPair(insp.pulpTemps[ix]));
+    if(JSON.stringify(next)!==JSON.stringify(insp.pulpTemps)){ insp.pulpTemps=next; changed=true; }
+  }
+  if(!Array.isArray(insp.ambientTemps)){
+    insp.ambientTemps=Array.from({length:2},()=>blankTempPair());
+    changed=true;
+  }else{
+    const next=Array.from({length:2},(_,ix)=>normalizeTempPair(insp.ambientTemps[ix]));
+    if(JSON.stringify(next)!==JSON.stringify(insp.ambientTemps)){ insp.ambientTemps=next; changed=true; }
+  }
+  if(changed) saveStore();
+}
+function tempInputCard(insp,group,ix,label){
+  const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;
+  const pair=arr[ix]||blankTempPair();
+  const base="temp-"+group+"-"+ix;
+  return '<div class="temp-reading-card">'+
+    '<div class="temp-reading-title">'+esc(label)+'</div>'+
+    '<div class="temp-unit-row"><label for="'+base+'-f">°F</label>'+
+      '<input id="'+base+'-f" type="number" inputmode="decimal" step="0.1" value="'+esc(pair.f)+'" placeholder="70.0" '+
+      'oninput=\'setTemperature("'+insp.id+'","'+group+'",'+ix+',"f",this.value)\'></div>'+
+    '<div class="temp-unit-row"><label for="'+base+'-c">°C</label>'+
+      '<input id="'+base+'-c" type="number" inputmode="decimal" step="0.1" value="'+esc(pair.c)+'" placeholder="21.1" '+
+      'oninput=\'setTemperature("'+insp.id+'","'+group+'",'+ix+',"c",this.value)\'></div>'+
+  '</div>';
+}
+function setTemperature(id,group,ix,unit,val){
+  const insp=getInsp(id); if(!insp) return;
+  ensureTemperatureFields(insp);
+  const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;
+  const pair=arr[ix]||blankTempPair();
+  const raw=String(val??"").trim();
+  const other=unit==="f"?"c":"f";
+  if(raw===""){
+    pair.f=""; pair.c="";
+  }else{
+    const n=Number(raw);
+    if(!Number.isFinite(n)) return;
+    pair[unit]=raw;
+    pair[other]=unit==="f" ? tempDisplay((n-32)*5/9) : tempDisplay(n*9/5+32);
+  }
+  arr[ix]=pair;
+  const otherEl=document.getElementById("temp-"+group+"-"+ix+"-"+other);
+  if(otherEl) otherEl.value=pair[other];
+  saveStore();
+}
 function detailsBody(insp){
+  ensureTemperatureFields(insp);
   const opts = store.commodities.map(c=>
     '<option value="'+c.id+'"'+(c.id===insp.commodityId?" selected":"")+'>'+esc(c.name)+'</option>').join("");
-  const temps = (insp.temps||[]).map((t,ix)=>
-    '<div class="tol-row"><div class="tname">Pulp temp '+(ix+1)+'</div>'+
-    '<input type="number" step="0.1" value="'+esc(t)+'" onchange=\'setTemp("'+insp.id+'",'+ix+',this.value)\'> \u00B0C'+
-    '<button class="del-x" onclick=\'delTemp("'+insp.id+'",'+ix+')\'>&times;</button></div>').join("");
+  const pulpTemps=Array.from({length:3},(_,ix)=>tempInputCard(insp,"pulp",ix,"Pulp temp "+(ix+1))).join("");
+  const ambientTemps=Array.from({length:2},(_,ix)=>tempInputCard(insp,"ambient",ix,"Ambient temperature "+(ix+1))).join("");
   const prof=commodityOf(insp);
   return storageNotice()+
   '<div class="card"><h2>Shipment details</h2>'+
@@ -944,15 +1038,16 @@ function detailsBody(insp){
       fieldRow("Inspection date","date",insp,"date")+
       fieldRow("DID","did",insp,"text","Document ID")+
     '</div></div>'+
-  '<div class="card"><h2>Pulp temperatures</h2>'+ (temps||"") +
-    '<button class="linkbtn" onclick=\'addTemp("'+insp.id+'")\'>+ Add temperature reading</button></div>'+
+  '<div class="card"><h2>Pulp temperatures</h2>'+
+    '<div class="temp-section-note">Enter either Fahrenheit or Celsius. QCapp fills in the matching value automatically.</div>'+
+    '<div class="temp-readings">'+pulpTemps+'</div></div>'+
+  '<div class="card"><h2>Ambient temperatures</h2>'+
+    '<div class="temp-section-note">Two ambient readings, with automatic °F and °C conversion.</div>'+
+    '<div class="temp-readings ambient">'+ambientTemps+'</div></div>'+
   '<div class="card"><h2>Notes</h2>'+
-    '<div class="field"><textarea placeholder="Free observations\u2026" onchange=\'setMeta("'+insp.id+'","notes",this.value)\'>'+esc(insp.meta.notes||"")+'</textarea></div></div>'+
+    '<div class="field"><textarea placeholder="Free observations…" onchange=\'setMeta("'+insp.id+'","notes",this.value)\'>'+esc(insp.meta.notes||"")+'</textarea></div></div>'+
   '<button class="btn btn-danger btn-block no-print" onclick=\'deleteInspection("'+insp.id+'")\'>Delete inspection</button>';
 }
-function addTemp(id){ const i=getInsp(id); i.temps=i.temps||[]; i.temps.push(""); saveStore(); render(); }
-function setTemp(id,ix,v){ const i=getInsp(id); i.temps[ix]=v; saveStore(); }
-function delTemp(id,ix){ const i=getInsp(id); i.temps.splice(ix,1); saveStore(); render(); }
 
 /* ---------------- TAB 2: pallets & samples ---------------- */
 function palletsBody(insp){
@@ -1175,7 +1270,16 @@ function reportBody(insp){
     '<td class="num">'+c.samples+'</td><td class="num">'+fmt(c.avgQ)+'</td><td class="num">'+fmt(c.avgC)+'</td>'+
     '<td>'+(c.grade>=0?'<span class="dot '+DCLS[c.grade]+'"></span> '+GRADE[c.grade]:'\u2014')+'</td></tr>'
   ).join("");
-  const temps=(insp.temps||[]).filter(t=>t!=="").map(t=>fmt(Number(t),1)+"\u00B0C").join(" \u00B7 ");
+  ensureTemperatureFields(insp);
+  const formatTempReadings = arr => arr.map((t,ix)=>{
+    const hasF=String(t.f??"").trim()!=="", hasC=String(t.c??"").trim()!=="";
+    if(!hasF && !hasC) return "";
+    const f=hasF?fmt(Number(t.f),1)+"°F":"—";
+    const c=hasC?fmt(Number(t.c),1)+"°C":"—";
+    return (ix+1)+": "+f+" / "+c;
+  }).filter(Boolean).join(" · ");
+  const pulpTemps=formatTempReadings(insp.pulpTemps);
+  const ambientTemps=formatTempReadings(insp.ambientTemps);
   return '<div class="report">'+
     '<div class="report-head"><div class="rtitle">'+esc(m.type||"Inspection Report")+'</div>'+
     '<div class="rsub">QCapp Prototype \u00B7 generated '+new Date().toLocaleDateString()+'</div></div>'+
@@ -1187,7 +1291,8 @@ function reportBody(insp){
       '<div><div class="k">Inspection date</div><div class="v">'+esc(m.date||"\u2014")+'</div></div>'+
       '<div><div class="k">DID</div><div class="v">'+esc(m.did||"\u2014")+'</div></div>'+
     '</div>'+
-    (temps?'<div class="temps-inline"><strong>Pulp temps:</strong> '+temps+'</div>':'')+
+    (pulpTemps?'<div class="temps-inline"><strong>Pulp temps:</strong> '+pulpTemps+'</div>':'')+
+    (ambientTemps?'<div class="temps-inline"><strong>Ambient temps:</strong> '+ambientTemps+'</div>':'')+
     '<div style="margin-bottom:12px">Overall: '+pill(r.overall)+'</div>'+
 
     '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Score summary</h2>'+

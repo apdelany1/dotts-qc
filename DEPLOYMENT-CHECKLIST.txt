@@ -9,3 +9,6 @@ QCAPP UPDATE CHECKLIST
 7. Fully close/reopen the installed app to refresh the service-worker cache.
 8. Test: Citrus single-column counts, serious skin breakdown inclusion, Avocado fields, direct number entry, photos, and all five commodity profiles.
 9. Continue parallel testing; do not rely on automatic grades until numeric tolerance rules are approved.
+
+
+Version 7 adds three pulp temperature readings and two ambient temperature readings. Each reading accepts Fahrenheit or Celsius and automatically converts the other unit.

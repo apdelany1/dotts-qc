@@ -35,3 +35,6 @@ A browser/PWA cannot silently write a camera capture into the iPhone Photos libr
 ## Data
 
 Inspections remain in browser `localStorage`; photos remain in IndexedDB on that phone. Hosting does not synchronize devices. The JSON backup does not include photos.
+
+
+Version 7 adds three pulp temperature readings and two ambient temperature readings. Each reading accepts Fahrenheit or Celsius and automatically converts the other unit.
