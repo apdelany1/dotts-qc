@@ -1,12 +1,11 @@
-DOTT'S QC — GITHUB PAGES CHECKLIST
+QCAPP UPDATE CHECKLIST
 
-[ ] Create a PUBLIC GitHub repository named dotts-qc
-[ ] Upload every item in this folder to the repository root
-[ ] Confirm index.html is visible at the top level
-[ ] Settings > Pages > Deploy from a branch
-[ ] Select main and /(root), then Save
-[ ] Open the github.io address on the phone while online
-[ ] Add the app to the home screen
-[ ] Turn on airplane mode and verify the app reopens
-[ ] Enter a TEST inspection and export a backup
-[ ] Do not use grades as official until tolerances are validated
+1. Open the existing dotts-qc GitHub repository.
+2. Add file -> Upload files.
+3. Upload the CONTENTS of this folder and replace matching files.
+4. Commit message: Update QCapp entry, photos, and commodity guides
+5. Wait for GitHub Pages deployment.
+6. Open the published link in Safari and confirm the title says QCapp.
+7. Fully close/reopen the installed app to refresh the service-worker cache.
+8. Test: direct defect number entry, multi-photo selection, rename, Save to Photos, and all five commodity profiles.
+9. Continue parallel testing; do not rely on automatic grades until numeric tolerance rules are approved.

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "dotts-qc-shell-v2-facelift";
+const CACHE_NAME = "qcapp-shell-v3-guidelines";
 const APP_SHELL = [
   "./",
   "./index.html",

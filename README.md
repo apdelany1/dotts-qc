@@ -1,46 +1,37 @@
-# Dott's Quality Control — GitHub Pages PWA
-> **Facelift build:** This version adds a light visual refresh only. Inspection workflow, storage, and grading behavior are unchanged.
+# QCapp — GitHub Pages PWA
 
+This update keeps the existing offline-first inspection prototype and adds:
 
-This folder is ready to upload to a GitHub repository and publish with GitHub Pages. It contains a static, installable, offline-capable version of the existing Dott's QC prototype.
+- Editable center-number inputs between the − / + buttons
+- Citrus, Avocado, Kiwi, Stone Fruit, and Banana profiles
+- HDI Marine guideline reference cards for the commodities covered by the supplied manual
+- Three neutral numeric columns in profile settings instead of Good / Fair / Poor labels
+- More pallet metadata: grower number, counter mark, package/label, pack date, lot number, and F/NF/I
+- Photo renaming after capture
+- Multi-select from the photo library
+- A per-photo **Save to Photos** share/download action
+- QCapp name and home-screen icon
 
-## Publish it with GitHub Pages
+## Update the existing GitHub Pages site
 
-1. Sign in to GitHub and create a new repository. A simple name is `dotts-qc`.
-2. Keep the repository **Public** when using GitHub Free.
-3. Upload **the contents of this folder** to the repository root. `index.html` must be at the top level, not inside another folder.
-4. Open the repository's **Settings → Pages**.
-5. Under **Build and deployment**, choose **Deploy from a branch**.
-6. Choose branch **main**, folder **/(root)**, then click **Save**.
-7. GitHub will show the published address, normally:
-   `https://YOUR-USERNAME.github.io/dotts-qc/`
-8. Open the address once on the inspection phone while online. Then install it:
-   - Android/Chrome: browser menu → **Install app** or **Add to Home screen**.
-   - iPhone/Safari: Share button → **Add to Home Screen**.
-9. Test offline mode before field use: open the installed app once, turn on airplane mode, close it, reopen it, and verify that it loads.
+Upload the changed files to the repository root and replace the existing versions:
 
-## What hosting changes — and what it does not
+- `index.html`
+- `manifest.webmanifest`
+- `sw.js`
+- the four files in `icons/`
+- optionally `README.md` and `DEPLOYMENT-CHECKLIST.txt`
 
-- GitHub Pages hosts the app files and gives you an HTTPS link.
-- The app shell is cached by `sw.js`, allowing the installed app to open offline after its first successful visit.
-- Inspections remain in `localStorage` on the browser/device.
-- Photos remain in IndexedDB on the browser/device.
-- Data does **not** synchronize between devices.
-- Browser data can be cleared by the user or operating system. Use **Settings → Export backup** regularly.
-- The current JSON backup does not include photos.
+Commit the changes. GitHub Pages will redeploy automatically. Installed phones may need to fully close and reopen QCapp once or twice for the new service-worker cache to take control.
 
-## Updating the app
+## iPhone photo limitation
 
-Replace the changed files in the repository and commit them. For changes to cached app-shell files, increment `CACHE_NAME` in `sw.js` (for example, `dotts-qc-shell-v2`) so installed devices discard the previous cache.
+A browser/PWA cannot silently write a camera capture into the iPhone Photos library. QCapp now provides **Save to Photos** on each photo, which opens the iOS share sheet when supported. Choose **Save Image**. For a guaranteed Camera Roll copy from the beginning, take pictures in the iPhone Camera app and then use QCapp’s multi-select Gallery button.
 
-## Important prototype warning
+## Guideline limitation
 
-This package preserves the current grading implementation. Validate every tolerance, unit, rollup, and grade against the inspector's approved reference process before using the output as an official client report.
+The supplied HDI Marine manual gives defect definitions, qualitative codes, and some firmness/storage thresholds, but it does not provide the complete three-column numeric tolerance table required to fully automate every grade. The app integrates its commodity checklists and fields, while the three numeric columns remain editable. Validate the exact tolerance mapping before official client use.
 
-## Files
+## Data
 
-- `index.html` — the complete application
-- `manifest.webmanifest` — install name, display mode, colors, and icons
-- `sw.js` — offline application-shell cache
-- `icons/` — home-screen icons
-- `.nojekyll` — tells GitHub Pages to publish the files directly
+Inspections remain in browser `localStorage`; photos remain in IndexedDB on that phone. Hosting does not synchronize devices. The JSON backup does not include photos.

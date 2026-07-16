@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Dott's Quality Control",
-  "short_name": "Dott's QC",
-  "description": "Offline-first produce arrival inspections, pallet sampling, defect grading, photos, and reports.",
+  "name": "QCapp \u2014 Produce Inspection",
+  "short_name": "QCapp",
+  "description": "Offline-first produce arrival inspections, pallet sampling, numeric defect entry, photos, and reports.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
