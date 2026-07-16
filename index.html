@@ -205,6 +205,9 @@ button{font-family:inherit}
   box-shadow:var(--shadow-sm);
 }
 .defect-row .name{flex:1;font-size:14px;font-weight:600;min-width:0;letter-spacing:-.01em}
+.defect-row.nested-defect{margin-left:24px;border-left:3px solid #B8C4D6;background:#F8FAFD}
+.defect-row.nested-defect .name{font-size:13px}
+.included-note{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.02em;margin-top:2px}
 .defect-row .pct{
   font-size:13px;color:var(--muted);min-width:54px;text-align:right;
   font-variant-numeric:tabular-nums;font-weight:600;
@@ -303,7 +306,7 @@ table.rt .num{text-align:right}
   .card{border:0;box-shadow:none;page-break-inside:avoid}
   .pill{border:1px solid #999}
 }
-/* ---------- QCapp field-entry and guideline additions ---------- */
+/* ---------- QCapp field-entry and photo additions ---------- */
 html{touch-action:manipulation}
 button,.stepper button{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .stepper .count-input{
@@ -313,18 +316,6 @@ button,.stepper button{touch-action:manipulation;-webkit-user-select:none;user-s
 }
 .stepper .count-input::-webkit-inner-spin-button,.stepper .count-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .stepper .count-input:focus{outline:none;background:#fff;box-shadow:0 0 0 3px rgba(49,92,255,.14)}
-.guideline-card{
-  margin:0 0 15px;border:1px solid rgba(49,92,255,.16);border-radius:18px;
-  background:linear-gradient(180deg,#F6F8FF,#FFFFFF);box-shadow:0 8px 22px rgba(49,92,255,.06);overflow:hidden;
-}
-.guideline-card summary{cursor:pointer;list-style:none;padding:15px 16px;font-weight:800;color:#20345A;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.guideline-card summary::-webkit-details-marker{display:none}
-.guideline-card summary::after{content:"+";font-size:19px;color:var(--accent);font-weight:600}
-.guideline-card[open] summary::after{content:"−"}
-.guideline-body{padding:0 16px 16px;color:#52627A;font-size:13px;line-height:1.55}
-.guideline-source{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#7A879A;margin:0 0 8px}
-.guideline-body ul{margin:8px 0 0;padding-left:19px}.guideline-body li{margin:5px 0}
-.guideline-warning{margin-top:10px;padding:10px 11px;border-radius:12px;background:#FFF7E9;border:1px solid #F3D9A8;color:#76531C}
 .photo-cell .photo-tag{white-space:normal;min-height:36px;line-height:1.25}
 .photo-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px;background:#fff;border-top:1px solid var(--line2)}
 .photo-tool{border:1px solid var(--line);background:#F8FAFD;color:#33435C;border-radius:9px;padding:7px 5px;font-size:10px;font-weight:800;cursor:pointer}
@@ -567,77 +558,43 @@ const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt = (n,d=2) => (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toFixed(d).replace(/\.?0+$/,"") || "0";
 
-/* ---------------- built-in commodity profiles & HDI references --- */
-function makeGuide(source, summary, checks, warning){
-  return {source, summary, checks, warning:warning||""};
-}
+/* ---------------- built-in commodity profiles ------------------- */
 function citrusProfile(){
   return {
     id:"citrus", name:"Citrus",
-    guide:makeGuide(
-      "HDI Marine Inspection Manual (2013), pages 13–15",
-      "Record grower, size, pack date, lot number and F / NF / I status. Judge sizing and shape by consistency within the box; record color tendencies and score visible quality and condition defects.",
-      ["Quality: misshapen, scars/russet, oil spots/oleocellosis and color tendencies.","Condition: firmness, shrivel, brown surface discoloration, skin breakdown, puffiness, internal condition and decay.","Skin breakdown is sunken, discolored or weak compared with surrounding skin; decay includes any mold or rot."],
-      "The manual is descriptive and does not supply the complete three-column tolerance matrix used by this prototype. Confirm numeric limits with the approved client sheet before official grading."
-    ),
     sumTol:{ quality:{good:0, fair:5, poor:10}, condition:{good:0, fair:5, poor:10} },
     defects:[
-      {key:"brix", name:"Brix (°Bx)", type:"quality", measure:true, higherIsBetter:true, tol:{good:10, fair:9.95, poor:9.9}},
-      {key:"openapp", name:"Open Appearance (1–3)", type:"quality", measure:true, higherIsBetter:false, tol:{good:1, fair:2, poor:3}},
-      {key:"green", name:"Green fruit", type:"quality", tol:{good:0, fair:2, poor:4}},
-      {key:"misshapen", name:"Misshapen", type:"quality", tol:{good:0, fair:3, poor:6}},
-      {key:"scars", name:"Scars / Russet", type:"quality", tol:{good:0, fair:3, poor:6}},
-      {key:"mech", name:"Mechanical Damage", type:"quality", tol:{good:0, fair:3, poor:6}},
-      {key:"oleo", name:"Oil Spots / Oleocellosis", type:"quality", tol:{good:0, fair:3, poor:6}},
-      {key:"seeds", name:"Seeds", type:"quality", tol:{good:0, fair:1, poor:2}},
-      {key:"underw", name:"Underweight", type:"quality", tol:{good:2, fair:1.5, poor:1}, higherIsBetter:false},
-      {key:"cubing", name:"Cubing", type:"condition", tol:{good:0, fair:3, poor:6}},
-      {key:"shrivel", name:"Shrivel", type:"condition", tol:{good:0, fair:3, poor:6}},
-      {key:"bruise", name:"Bruising / Surface Discoloration", type:"condition", tol:{good:0, fair:3, poor:6}},
-      {key:"freeze", name:"Freeze Damage", type:"condition", tol:{good:0, fair:1, poor:3}},
-      {key:"stemend", name:"Stem end Browning", type:"condition", tol:{good:0, fair:3, poor:5}},
-      {key:"puff", name:"Puffiness", type:"condition", tol:{good:0, fair:3, poor:6}},
-      {key:"soft", name:"Soft", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"oleo", name:"Oleo", type:"quality", tol:{good:0, fair:3, poor:6}},
+      {key:"scars", name:"Scars", type:"quality", tol:{good:0, fair:3, poor:6}},
       {key:"skinbd", name:"Skin Breakdown", type:"condition", tol:{good:0, fair:3, poor:5}},
-      {key:"internal", name:"Internal", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"seriousskinbd", name:"Serious Skin Breakdown", type:"condition", includedIn:"skinbd", excludeFromTotal:true, tol:{good:0, fair:1, poor:3}},
       {key:"decay", name:"Decay", type:"condition", tol:{good:0, fair:0.01, poor:1}},
-      {key:"others", name:"Others", type:"condition", tol:{good:0, fair:3, poor:6}}
+      {key:"softmushy", name:"Soft (Mushy)", type:"condition", tol:{good:0, fair:3, poor:6}},
+      {key:"softpuffy", name:"Soft (Puffy)", type:"condition", tol:{good:0, fair:3, poor:6}}
     ]
   };
 }
 function avocadoProfile(){
   return {
     id:"avocado", name:"Avocado",
-    guide:makeGuide(
-      "HDI Marine Inspection Manual (2013), pages 11–12",
-      "Record grower, size, pack date, lot number and F / NF status. Judge tray fit, color appearance and firmness, then record defects by percentage.",
-      ["Quality: misshapen, scars and color appearance/tendencies.","Condition: bruising, brown surface discoloration, soft fruit, internal discoloration and decay.","Fruit should generally range from hard to firm; if soft pieces are found, record pressure/psi when available."],
-      "Numeric limits below are editable placeholders until your approved avocado tolerance table is entered."
-    ),
     sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},
     defects:[
-      {key:"misshapen",name:"Misshapen",type:"quality",tol:{good:0,fair:3,poor:6}},
       {key:"scars",name:"Scars",type:"quality",tol:{good:0,fair:3,poor:6}},
-      {key:"color",name:"Color Appearance (1–4)",type:"quality",measure:true,tol:{good:1,fair:2,poor:4}},
-      {key:"firmpsi",name:"Firmness (psi)",type:"condition",measure:true,higherIsBetter:true,tol:{good:10,fair:5,poor:1}},
-      {key:"bruise",name:"Bruising",type:"condition",tol:{good:0,fair:3,poor:6}},
-      {key:"bsd",name:"Brown Surface Discoloration",type:"condition",tol:{good:0,fair:3,poor:6}},
+      {key:"misshapen",name:"Misshapen",type:"quality",tol:{good:0,fair:3,poor:6}},
+      {key:"otherquality",name:"Other",type:"quality",tol:{good:0,fair:3,poor:6}},
+      {key:"green",name:"Green",type:"quality",tol:{good:0,fair:3,poor:6}},
+      {key:"turning",name:"Turning",type:"quality",tol:{good:0,fair:3,poor:6}},
+      {key:"brown",name:"Brown",type:"quality",tol:{good:0,fair:3,poor:6}},
       {key:"soft",name:"Soft",type:"condition",tol:{good:0,fair:3,poor:6}},
-      {key:"internal",name:"Internal Discoloration",type:"condition",tol:{good:0,fair:3,poor:6}},
-      {key:"decay",name:"Decay",type:"condition",tol:{good:0,fair:.01,poor:1}},
-      {key:"others",name:"Others",type:"condition",tol:{good:0,fair:3,poor:6}}
+      {key:"shrivel",name:"Shrivel",type:"condition",tol:{good:0,fair:3,poor:6}},
+      {key:"mold",name:"Mold",type:"condition",tol:{good:0,fair:0.01,poor:1}},
+      {key:"decay",name:"Decay",type:"condition",tol:{good:0,fair:0.01,poor:1}}
     ]
   };
 }
 function kiwiProfile(){
   return {
     id:"kiwi", name:"Kiwi",
-    guide:makeGuide(
-      "HDI Marine Inspection Manual (2013), pages 16–17",
-      "Judge open appearance, tray fit and scars, then check firmness and condition defects. The manual defines firmness bands from hard through soft by psi.",
-      ["Hard: 10 psi or more; Firm: 4–10 psi; Semi-firm: 1.2–3.9 psi; Soft: 1.1 psi or less.","Quality: open appearance, size/shape and scars/russet.","Condition: bruising, shrivel, brown surface discoloration and decay."],
-      "The four HDI firmness descriptions do not map cleanly to the app’s three numeric columns; retain the measured psi and confirm the desired rollup rule."
-    ),
     sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},
     defects:[
       {key:"openapp",name:"Open Appearance (1–3)",type:"quality",measure:true,tol:{good:1,fair:2,poor:3}},
@@ -655,12 +612,6 @@ function kiwiProfile(){
 function stoneFruitProfile(){
   return {
     id:"stone-fruit", name:"Stone Fruit",
-    guide:makeGuide(
-      "HDI Marine Inspection Manual (2013), pages 21–24 and 28–30",
-      "This profile covers peaches, nectarines, apricots and plums. Record variety because blush/color and firmness expectations differ by fruit and variety.",
-      ["Quality: misshapen, scars/russet, blush/color and ground color.","Condition: firmness, shrivel/dehydration, bruising, cracks, surface discoloration, soft fruit, internal condition and decay.","For peaches/nectarines/apricots, the manual lists Hard ≥18 psi, Firm 10–17, Semi-firm 5–9 and Soft <5; plum firmness ranges differ."],
-      "Use the Variety field and verify the correct commodity/variety-specific limits before official grading."
-    ),
     sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},
     defects:[
       {key:"misshapen",name:"Misshapen",type:"quality",tol:{good:0,fair:3,poor:6}},
@@ -682,12 +633,6 @@ function stoneFruitProfile(){
 function bananaProfile(){
   return {
     id:"banana", name:"Banana",
-    guide:makeGuide(
-      "Not covered in the supplied HDI Marine Inspection Manual",
-      "A practical draft profile is included so the commodity can be tested now, but its defect definitions and numeric limits must be replaced with the approved banana inspection standard.",
-      ["Draft quality fields: color stage/green fruit, scars, mechanical damage and underweight.","Draft condition fields: bruising, chilling injury, crown/neck damage, split peel, soft fruit and decay.","Treat this profile as workflow scaffolding only."],
-      "Do not use the Banana profile for an official grade until your inspector supplies the governing banana guideline and tolerance table."
-    ),
     sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},
     defects:[
       {key:"colorstage",name:"Color Stage / Green Fruit",type:"quality",measure:true,tol:{good:1,fair:4,poor:7}},
@@ -705,8 +650,20 @@ function bananaProfile(){
   };
 }
 function builtInProfiles(){ return [citrusProfile(), avocadoProfile(), kiwiProfile(), stoneFruitProfile(), bananaProfile()]; }
-function seed(){ return { schemaVersion:2, commodities:builtInProfiles(), inspections:[] }; }
+function seed(){ return { schemaVersion:3, commodities:builtInProfiles(), inspections:[] }; }
 let store = loadStore() || seed();
+function syncBuiltInProfile(existing, template){
+  const oldByKey = new Map((existing.defects||[]).map(d=>[d.key,d]));
+  existing.id = template.id;
+  existing.name = template.name;
+  existing.sumTol = existing.sumTol || template.sumTol;
+  existing.defects = template.defects.map(td=>{
+    const old = oldByKey.get(td.key);
+    const merged = Object.assign({}, td);
+    if(old && old.tol) merged.tol = old.tol;
+    return merged;
+  });
+}
 function migrateStore(){
   store.commodities = Array.isArray(store.commodities) ? store.commodities : [];
   store.inspections = Array.isArray(store.inspections) ? store.inspections : [];
@@ -714,18 +671,10 @@ function migrateStore(){
   templates.forEach(t=>{
     let existing = store.commodities.find(c=>c.id===t.id);
     if(!existing && t.id==="citrus") existing = store.commodities.find(c=>/^citrus/i.test(c.name||""));
-    if(!existing){ store.commodities.push(t); return; }
-    if(t.id==="citrus"){ existing.id="citrus"; existing.name="Citrus"; }
-    existing.guide = t.guide;
-    existing.sumTol = existing.sumTol || t.sumTol;
-    existing.defects = Array.isArray(existing.defects) ? existing.defects : [];
-    t.defects.forEach(td=>{
-      const old = existing.defects.find(d=>d.key===td.key);
-      if(!old) existing.defects.push(td);
-      else if(["oleo","scars","bruise"].includes(td.key)) old.name = td.name;
-    });
+    if(!existing) store.commodities.push(t);
+    else syncBuiltInProfile(existing,t);
   });
-  store.schemaVersion=2;
+  store.schemaVersion=3;
   saveStore();
 }
 migrateStore();
@@ -751,14 +700,6 @@ function gradeValue(v, tol, higherIsBetter){
 function commodityOf(insp){
   return store.commodities.find(c=>c.id===insp.commodityId) || store.commodities[0];
 }
-function guidelineCard(prof){
-  if(!prof || !prof.guide) return "";
-  const g=prof.guide;
-  const items=(g.checks||[]).map(x=>'<li>'+esc(x)+'</li>').join("");
-  return '<details class="guideline-card"><summary>'+esc(prof.name)+' inspection guideline</summary><div class="guideline-body">'+
-    '<div class="guideline-source">'+esc(g.source||"")+'</div><div>'+esc(g.summary||"")+'</div>'+
-    (items?'<ul>'+items+'</ul>':'')+(g.warning?'<div class="guideline-warning">'+esc(g.warning)+'</div>':'')+'</div></details>';
-}
 /* per-sample computation */
 function computeSample(sample, prof){
   const size = Number(sample.size)||0;
@@ -774,7 +715,9 @@ function computeSample(sample, prof){
     }
     const cnt = Number(sample.counts && sample.counts[d.key])||0;
     const pct = size>0 ? cnt/size*100 : 0;
-    if(d.type==="quality") sumQ+=pct; else sumC+=pct;
+    if(!d.excludeFromTotal){
+      if(d.type==="quality") sumQ+=pct; else sumC+=pct;
+    }
     const g = size>0 ? gradeValue(pct, d.tol, d.higherIsBetter) : -1;
     perDefect[d.key] = {value:cnt, pct, grade:g};
     if(g>worst) worst=g;
@@ -842,7 +785,9 @@ function computeInspection(insp){
       const item={name:d.name, pct, grade:gradeValue(pct,d.tol,d.higherIsBetter)};
       rank[d.type].push(item);
     }
-    if(d.type==="quality") rq+=pct; else rc+=pct;
+    if(!d.excludeFromTotal){
+      if(d.type==="quality") rq+=pct; else rc+=pct;
+    }
   });
   rank.quality.sort((a,b)=>b.pct-a.pct);
   rank.condition.sort((a,b)=>b.pct-a.pct);
@@ -998,7 +943,7 @@ function detailsBody(insp){
       fieldRow("Warehouse","warehouse",insp,"text","e.g. CWPL")+
       fieldRow("Inspection date","date",insp,"date")+
       fieldRow("DID","did",insp,"text","Document ID")+
-    '</div></div>'+guidelineCard(prof)+
+    '</div></div>'+
   '<div class="card"><h2>Pulp temperatures</h2>'+ (temps||"") +
     '<button class="linkbtn" onclick=\'addTemp("'+insp.id+'")\'>+ Add temperature reading</button></div>'+
   '<div class="card"><h2>Notes</h2>'+
@@ -1065,7 +1010,7 @@ function palletDetail(insp,p,prof){
     pf("Package / Label","package")+pf("Pack date","packDate","date")+
     pf("Lot no.","lotNo")+pf("F / NF / I","treatment","text","F, NF or I")+
     pf("Size / count","size")+pf("Cases on pallet","cases","number")+
-  '</div></div>'+guidelineCard(prof)+
+  '</div></div>'+
   '<div class="card"><h2>Samples</h2>'+(samples||'<div class="section-note">No samples yet. A sample is a set of fruit pulled from this pallet and checked defect by defect.</div>')+
   '</div>'+
   '<div class="card"><h2>Photos</h2>'+
@@ -1102,34 +1047,35 @@ function sampleBody(insp,p,prof){
   if(!s) return palletDetail(insp,p,prof);
   const cs = computeSample(s,prof);
   const row = d=>{
+    const nested = d.includedIn ? " nested-defect" : "";
+    const parent = d.includedIn ? prof.defects.find(x=>x.key===d.includedIn) : null;
+    const includedNote = parent ? '<div class="included-note">Included in '+esc(parent.name)+'</div>' : '';
     if(d.measure){
       const v = s.measures && s.measures[d.key];
-      return '<div class="defect-row" id="dr-'+d.key+'">'+
-        '<div class="name">'+esc(d.name)+'</div><div class="pct" id="pct-'+d.key+'"></div>'+
+      return '<div class="defect-row'+nested+'" id="dr-'+d.key+'">'+
+        '<div class="name">'+esc(d.name)+includedNote+'</div><div class="pct" id="pct-'+d.key+'"></div>'+
         '<div class="stepper"><input type="number" step="0.1" inputmode="decimal" value="'+esc(v==null?"":v)+'" onfocus="this.select()" '+
         'oninput=\'setMeasure("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\'></div></div>';
     }
     const cnt = Number(s.counts && s.counts[d.key])||0;
     const pct = cs.perDefect[d.key].pct;
-    const max = Math.max(Number(s.size)||100,100);
-    return '<div class="defect-row" id="dr-'+d.key+'">'+
-      '<div class="name">'+esc(d.name)+'</div><div class="pct" id="pct-'+d.key+'">'+fmt(pct)+'%</div>'+
+    const sampleMax = Math.max(Number(s.size)||100,100);
+    const parentMax = parent ? Math.max(Number(s.counts&&s.counts[parent.key])||0,cnt) : sampleMax;
+    return '<div class="defect-row'+nested+'" id="dr-'+d.key+'">'+
+      '<div class="name">'+esc(d.name)+includedNote+'</div><div class="pct" id="pct-'+d.key+'">'+fmt(pct)+'%</div>'+
       '<div class="stepper">'+
         '<button type="button" onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",-1)\' aria-label="Decrease '+esc(d.name)+'">&minus;</button>'+
-        '<input class="count-input" id="val-'+d.key+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+cnt+'" onfocus="this.select()" '+
+        '<input class="count-input" id="val-'+d.key+'" type="number" inputmode="numeric" min="0" max="'+parentMax+'" step="1" value="'+cnt+'" onfocus="this.select()" '+
           'oninput=\'setCount("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\' aria-label="'+esc(d.name)+' count">'+
         '<button type="button" onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",1)\' aria-label="Increase '+esc(d.name)+'">+</button>'+
       '</div></div>';
   };
-  const q = prof.defects.filter(d=>d.type==="quality").map(row).join("");
-  const c = prof.defects.filter(d=>d.type==="condition").map(row).join("");
+  const rows = prof.defects.map(row).join("");
   return '<button class="linkbtn" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'"})\'>&#8592; '+esc(p.label||"Pallet")+'</button>'+
     '<div class="samplebar"><div class="sums" id="sample-sums">Qual '+fmt(cs.sumQ)+'% · Cond '+fmt(cs.sumC)+'%</div><span id="sample-pill">'+pill(cs.grade)+'</span></div>'+
-    guidelineCard(prof)+
     '<div class="card"><div class="field"><label>Sample size (fruit inspected)</label><input type="number" inputmode="numeric" value="'+esc(s.size)+'" onfocus="this.select()" onchange=\'setSize("'+insp.id+'","'+p.id+'","'+s.id+'",this.value)\'></div></div>'+
-    '<div class="section-note">Use − / + for small changes, or tap the center number and type the value directly.</div>'+
-    '<div class="defect-group-title">Quality defects <span class="dot" style="background:#8FA6B2"></span></div>'+q+
-    '<div class="defect-group-title">Condition defects <span class="dot" style="background:#8FA6B2"></span></div>'+c+
+    '<div class="section-note">Enter one number for each field. Use − / + for small changes, or tap the center number and type the count directly.</div>'+
+    '<div class="defect-group-title">Inspection counts</div>'+rows+
     '<div style="height:8px"></div><button class="btn btn-danger btn-block" onclick=\'delSample("'+insp.id+'","'+p.id+'","'+s.id+'")\'>Delete sample</button>';
 }
 function refreshSampleLive(insp,p,s,prof){
@@ -1153,14 +1099,31 @@ function clampCount(s,val){
   const limit=Number(s.size)||0;
   return limit>0 ? Math.min(raw,limit) : raw;
 }
+function applyIncludedRelationship(s,prof,key){
+  const d=prof.defects.find(x=>x.key===key);
+  if(!d) return;
+  if(d.includedIn){
+    const child=Number(s.counts[key])||0;
+    const parent=Number(s.counts[d.includedIn])||0;
+    if(child>parent) s.counts[d.includedIn]=child;
+  }else{
+    (prof.defects||[]).filter(x=>x.includedIn===key).forEach(child=>{
+      const parent=Number(s.counts[key])||0;
+      if((Number(s.counts[child.key])||0)>parent) s.counts[child.key]=parent;
+    });
+  }
+}
 function bump(id,pid,sid,key,delta){
   const {insp,p,s,prof}=findSample(id,pid,sid); s.counts=s.counts||{};
   s.counts[key]=clampCount(s,(Number(s.counts[key])||0)+delta);
+  applyIncludedRelationship(s,prof,key);
   saveStore(); refreshSampleLive(insp,p,s,prof);
 }
 function setCount(id,pid,sid,key,val){
   const {insp,p,s,prof}=findSample(id,pid,sid); s.counts=s.counts||{};
-  s.counts[key]=clampCount(s,val); saveStore(); refreshSampleLive(insp,p,s,prof);
+  s.counts[key]=clampCount(s,val);
+  applyIncludedRelationship(s,prof,key);
+  saveStore(); refreshSampleLive(insp,p,s,prof);
 }
 function setMeasure(id,pid,sid,key,val){
   const {insp,p,s,prof}=findSample(id,pid,sid); s.measures=s.measures||{};
@@ -1169,6 +1132,7 @@ function setMeasure(id,pid,sid,key,val){
 function setSize(id,pid,sid,val){
   const {insp,p,s,prof}=findSample(id,pid,sid); s.size=Math.max(0,Number(val)||0);
   Object.keys(s.counts||{}).forEach(k=>s.counts[k]=clampCount(s,s.counts[k]));
+  prof.defects.forEach(d=>applyIncludedRelationship(s,prof,d.key));
   saveStore(); render();
 }
 
@@ -1259,7 +1223,7 @@ function renderSettings(){
   $app().innerHTML = topbar("Settings","Commodity profiles",{view:"home"})+
     '<div class="screen">'+storageNotice()+items+
     '<button class="btn btn-ghost btn-block" onclick="addCommodity()">+ New commodity profile</button>'+
-    '<div class="section-note" style="margin-top:14px">Each profile holds a defect list, three editable numeric columns and an inspection reference. Built-in profiles are starting points and can be renamed or changed.</div>'+
+    '<div class="section-note" style="margin-top:14px">Each profile holds one vertical inspection-field list and three editable numeric columns. Built-in profiles can be renamed or changed.</div>'+
     '<div class="card" style="margin-top:14px"><h2>Install &amp; offline use</h2>'+
     '<div class="section-note">Install this site on the inspection device after opening it once online. The app shell will then open without service. Inspection records and photos remain on this browser/device; hosting does not synchronize them between phones.</div>'+
     '<button class="btn btn-ghost btn-block" id="install-app-btn" onclick="installApp()">Install app / instructions</button></div>'+
@@ -1288,10 +1252,12 @@ function delCommodity(cid){
 function renderCommodity(){
   const c = store.commodities.find(x=>x.id===route.commodityId);
   if(!c){ go({view:"settings"}); return; }
-  const tolRow=(d,ix)=>'<div class="tol-row"><div class="tname">'+esc(d.name)+(d.measure?' <span style="color:var(--muted);font-weight:400">(measured)</span>':'')+'</div>'+
+  const tolRow=(d,ix)=>'<div class="tol-row"><div class="tname">'+esc(d.name)+
+    (d.includedIn?' <span style="color:var(--muted);font-weight:400">(included in '+esc((c.defects.find(x=>x.key===d.includedIn)||{}).name||"parent count")+')</span>':'')+
+    (d.measure?' <span style="color:var(--muted);font-weight:400">(measured)</span>':'')+'</div>'+
     ["good","fair","poor"].map(k=>'<input type="number" step="0.01" value="'+esc(d.tol[k])+'" onchange=\'setTol("'+c.id+'",'+ix+',"'+k+'",this.value)\'>').join("")+
     '<button class="del-x" onclick=\'delDefect("'+c.id+'",'+ix+')\'>&times;</button></div>';
-  const group=type=>c.defects.map((d,ix)=>({d,ix})).filter(x=>x.d.type===type).map(x=>tolRow(x.d,x.ix)).join("");
+  const rows=c.defects.map((d,ix)=>tolRow(d,ix)).join("");
   const head='<div class="tol-head"><div class="tname"></div><span>Col 1</span><span>Col 2</span><span>Col 3</span><span style="width:30px"></span></div>';
   const sumRow=(label,t)=>'<div class="tol-row"><div class="tname">'+label+'</div>'+
     ["good","fair","poor"].map(k=>'<input type="number" step="0.01" value="'+esc(t[k])+'" onchange=\'setSumTol("'+c.id+'","'+(label.indexOf("Qual")>=0?"quality":"condition")+'","'+k+'",this.value)\'>').join("")+
@@ -1299,15 +1265,13 @@ function renderCommodity(){
   $app().innerHTML = topbar(c.name,"Profile setup",{view:"settings"})+
     '<div class="screen">'+
     '<div class="card"><h2>Profile name</h2><div class="field"><input type="text" value="'+esc(c.name)+'" onchange=\'setCommodityName("'+c.id+'",this.value)\'></div></div>'+
-    guidelineCard(c)+
     '<div class="card"><h2>Sum numeric columns (%)</h2>'+head+
       sumRow("Sum. Qual. Defects (%)",c.sumTol.quality)+
       sumRow("Sum. Cond. Defects (%)",c.sumTol.condition)+'</div>'+
-    '<div class="card"><h2>Quality defects</h2>'+head+group("quality")+
-      '<button class="linkbtn" onclick=\'addDefect("'+c.id+'","quality")\'>+ Add quality defect</button></div>'+
-    '<div class="card"><h2>Condition defects</h2>'+head+group("condition")+
-      '<button class="linkbtn" onclick=\'addDefect("'+c.id+'","condition")\'>+ Add condition defect</button></div>'+
-    '<div class="section-note">The three numeric columns are shown without Good / Fair / Poor labels, as requested. The current prototype still uses Column 1 as the lower band and Column 3 as the upper band for its existing grade calculations. Confirm the exact column meaning before official use.</div>'+
+    '<div class="card"><h2>Inspection fields</h2>'+head+rows+
+      '<div class="row-actions"><button class="linkbtn" style="flex:1" onclick=\'addDefect("'+c.id+'","quality")\'>+ Add quality field</button>'+
+      '<button class="linkbtn" style="flex:1" onclick=\'addDefect("'+c.id+'","condition")\'>+ Add condition field</button></div></div>'+
+    '<div class="section-note">The sample screen shows every field in one vertical column. The three numeric columns remain editable here for the existing calculation system.</div>'+
     '<button class="btn btn-danger btn-block" onclick=\'delCommodity("'+c.id+'")\'>Delete profile</button></div>';
 }
 function setCommodityName(cid,v){ const c=store.commodities.find(x=>x.id===cid); c.name=v; saveStore(); }

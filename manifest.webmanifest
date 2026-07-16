@@ -2,7 +2,7 @@
   "id": "./",
   "name": "QCapp \u2014 Produce Inspection",
   "short_name": "QCapp",
-  "description": "Offline-first produce arrival inspections, pallet sampling, numeric defect entry, photos, and reports.",
+  "description": "Offline-first produce arrival inspections, pallet sampling, single-column defect entry, photos, and reports.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

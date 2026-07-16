@@ -2,9 +2,13 @@
 
 This update keeps the existing offline-first inspection prototype and adds:
 
+- One vertical inspection-count list for every commodity profile
+- Citrus fields: Oleo, Scars, Skin Breakdown, Serious Skin Breakdown, Decay, Soft (Mushy), and Soft (Puffy)
+- Serious Skin Breakdown is included inside the Skin Breakdown count and is not double-counted in totals
+- Avocado fields: Scars, Misshapen, Other, Green, Turning, Brown, Soft, Shrivel, Mold, and Decay
+
 - Editable center-number inputs between the − / + buttons
 - Citrus, Avocado, Kiwi, Stone Fruit, and Banana profiles
-- HDI Marine guideline reference cards for the commodities covered by the supplied manual
 - Three neutral numeric columns in profile settings instead of Good / Fair / Poor labels
 - More pallet metadata: grower number, counter mark, package/label, pack date, lot number, and F/NF/I
 - Photo renaming after capture
@@ -26,11 +30,7 @@ Commit the changes. GitHub Pages will redeploy automatically. Installed phones m
 
 ## iPhone photo limitation
 
-A browser/PWA cannot silently write a camera capture into the iPhone Photos library. QCapp now provides **Save to Photos** on each photo, which opens the iOS share sheet when supported. Choose **Save Image**. For a guaranteed Camera Roll copy from the beginning, take pictures in the iPhone Camera app and then use QCapp’s multi-select Gallery button.
-
-## Guideline limitation
-
-The supplied HDI Marine manual gives defect definitions, qualitative codes, and some firmness/storage thresholds, but it does not provide the complete three-column numeric tolerance table required to fully automate every grade. The app integrates its commodity checklists and fields, while the three numeric columns remain editable. Validate the exact tolerance mapping before official client use.
+A browser/PWA cannot silently write a camera capture into the iPhone Photos library. QCapp provides **Save to Photos** on each photo, which opens the iOS share sheet when supported. Choose **Save Image**. For a guaranteed Camera Roll copy from the beginning, take pictures in the iPhone Camera app and then use QCapp’s multi-select Gallery button.
 
 ## Data
 

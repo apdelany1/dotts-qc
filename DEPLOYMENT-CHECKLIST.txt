@@ -3,9 +3,9 @@ QCAPP UPDATE CHECKLIST
 1. Open the existing dotts-qc GitHub repository.
 2. Add file -> Upload files.
 3. Upload the CONTENTS of this folder and replace matching files.
-4. Commit message: Update QCapp entry, photos, and commodity guides
+4. Commit message: Update single-column commodity fields
 5. Wait for GitHub Pages deployment.
 6. Open the published link in Safari and confirm the title says QCapp.
 7. Fully close/reopen the installed app to refresh the service-worker cache.
-8. Test: direct defect number entry, multi-photo selection, rename, Save to Photos, and all five commodity profiles.
+8. Test: Citrus single-column counts, serious skin breakdown inclusion, Avocado fields, direct number entry, photos, and all five commodity profiles.
 9. Continue parallel testing; do not rely on automatic grades until numeric tolerance rules are approved.
