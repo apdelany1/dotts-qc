@@ -267,13 +267,13 @@ table.rt .num{text-align:right}
 .tol-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .tol-row .tname{flex:1;font-size:14px;font-weight:600;min-width:0;letter-spacing:-.01em}
 .tol-row input{
-  width:62px;padding:10px 6px;text-align:center;border:1px solid var(--line);
+  width:92px;padding:10px 8px;text-align:center;border:1px solid var(--line);
   border-radius:11px;font-size:14px;font-family:inherit;font-variant-numeric:tabular-nums;
 }
 .tol-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(46,91,255,.14)}
 .tol-head{display:flex;gap:8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:6px}
 .tol-head .tname{flex:1}
-.tol-head span{width:62px;text-align:center}
+.tol-head span{width:92px;text-align:center}
 .linkbtn{background:none;border:0;color:var(--accent-dark);font-weight:700;font-size:14px;cursor:pointer;padding:10px 0}
 .del-x{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;border-radius:8px}
 
@@ -1219,11 +1219,11 @@ function renderSettings(){
   const items = store.commodities.map(c=>
     '<div class="insp-item" onclick=\'go({view:"settings",commodityId:"'+c.id+'"})\'>'+
     '<div class="insp-main"><div class="l1">'+esc(c.name)+'</div>'+
-    '<div class="l2">'+c.defects.length+' fields · tap to edit numeric columns</div></div><span>&#8250;</span></div>').join("");
+    '<div class="l2">'+c.defects.length+' fields · tap to edit scores</div></div><span>&#8250;</span></div>').join("");
   $app().innerHTML = topbar("Settings","Commodity profiles",{view:"home"})+
     '<div class="screen">'+storageNotice()+items+
     '<button class="btn btn-ghost btn-block" onclick="addCommodity()">+ New commodity profile</button>'+
-    '<div class="section-note" style="margin-top:14px">Each profile holds one vertical inspection-field list and three editable numeric columns. Built-in profiles can be renamed or changed.</div>'+
+    '<div class="section-note" style="margin-top:14px">Each profile holds one vertical inspection-field list with one editable score for every field. Built-in profiles can be renamed or changed.</div>'+
     '<div class="card" style="margin-top:14px"><h2>Install &amp; offline use</h2>'+
     '<div class="section-note">Install this site on the inspection device after opening it once online. The app shell will then open without service. Inspection records and photos remain on this browser/device; hosting does not synchronize them between phones.</div>'+
     '<button class="btn btn-ghost btn-block" id="install-app-btn" onclick="installApp()">Install app / instructions</button></div>'+
@@ -1252,35 +1252,50 @@ function delCommodity(cid){
 function renderCommodity(){
   const c = store.commodities.find(x=>x.id===route.commodityId);
   if(!c){ go({view:"settings"}); return; }
+  const scoreOf = obj => obj.score != null ? obj.score : (obj.tol ? obj.tol.poor : obj.poor);
   const tolRow=(d,ix)=>'<div class="tol-row"><div class="tname">'+esc(d.name)+
     (d.includedIn?' <span style="color:var(--muted);font-weight:400">(included in '+esc((c.defects.find(x=>x.key===d.includedIn)||{}).name||"parent count")+')</span>':'')+
     (d.measure?' <span style="color:var(--muted);font-weight:400">(measured)</span>':'')+'</div>'+
-    ["good","fair","poor"].map(k=>'<input type="number" step="0.01" value="'+esc(d.tol[k])+'" onchange=\'setTol("'+c.id+'",'+ix+',"'+k+'",this.value)\'>').join("")+
+    '<input type="number" step="0.01" value="'+esc(scoreOf(d))+'" onchange=\'setScore("'+c.id+'",'+ix+',this.value)\' aria-label="'+esc(d.name)+' score">'+
     '<button class="del-x" onclick=\'delDefect("'+c.id+'",'+ix+')\'>&times;</button></div>';
   const rows=c.defects.map((d,ix)=>tolRow(d,ix)).join("");
-  const head='<div class="tol-head"><div class="tname"></div><span>Col 1</span><span>Col 2</span><span>Col 3</span><span style="width:30px"></span></div>';
-  const sumRow=(label,t)=>'<div class="tol-row"><div class="tname">'+label+'</div>'+
-    ["good","fair","poor"].map(k=>'<input type="number" step="0.01" value="'+esc(t[k])+'" onchange=\'setSumTol("'+c.id+'","'+(label.indexOf("Qual")>=0?"quality":"condition")+'","'+k+'",this.value)\'>').join("")+
+  const head='<div class="tol-head"><div class="tname"></div><span>Score</span><span style="width:30px"></span></div>';
+  const sumRow=(label,t,type)=>'<div class="tol-row"><div class="tname">'+label+'</div>'+
+    '<input type="number" step="0.01" value="'+esc(t.score != null ? t.score : t.poor)+'" onchange=\'setSumScore("'+c.id+'","'+type+'",this.value)\' aria-label="'+label+' score">'+
     '<span style="width:30px"></span></div>';
   $app().innerHTML = topbar(c.name,"Profile setup",{view:"settings"})+
     '<div class="screen">'+
     '<div class="card"><h2>Profile name</h2><div class="field"><input type="text" value="'+esc(c.name)+'" onchange=\'setCommodityName("'+c.id+'",this.value)\'></div></div>'+
-    '<div class="card"><h2>Sum numeric columns (%)</h2>'+head+
-      sumRow("Sum. Qual. Defects (%)",c.sumTol.quality)+
-      sumRow("Sum. Cond. Defects (%)",c.sumTol.condition)+'</div>'+
+    '<div class="card"><h2>Sum scores (%)</h2>'+head+
+      sumRow("Sum. Qual. Defects (%)",c.sumTol.quality,"quality")+
+      sumRow("Sum. Cond. Defects (%)",c.sumTol.condition,"condition")+'</div>'+
     '<div class="card"><h2>Inspection fields</h2>'+head+rows+
       '<div class="row-actions"><button class="linkbtn" style="flex:1" onclick=\'addDefect("'+c.id+'","quality")\'>+ Add quality field</button>'+
       '<button class="linkbtn" style="flex:1" onclick=\'addDefect("'+c.id+'","condition")\'>+ Add condition field</button></div></div>'+
-    '<div class="section-note">The sample screen shows every field in one vertical column. The three numeric columns remain editable here for the existing calculation system.</div>'+
+    '<div class="section-note">The sample screen shows every field in one vertical column. Each field has one editable Score value.</div>'+
     '<button class="btn btn-danger btn-block" onclick=\'delCommodity("'+c.id+'")\'>Delete profile</button></div>';
 }
 function setCommodityName(cid,v){ const c=store.commodities.find(x=>x.id===cid); c.name=v; saveStore(); }
-function setTol(cid,ix,k,v){ const c=store.commodities.find(x=>x.id===cid); c.defects[ix].tol[k]=Number(v); saveStore(); }
-function setSumTol(cid,type,k,v){ const c=store.commodities.find(x=>x.id===cid); c.sumTol[type][k]=Number(v); saveStore(); }
+function setScore(cid,ix,v){
+  const c=store.commodities.find(x=>x.id===cid);
+  const d=c.defects[ix];
+  const score=Number(v)||0;
+  d.score=score;
+  d.tol=d.tol||{good:0,fair:0,poor:score};
+  d.tol.poor=score;
+  saveStore();
+}
+function setSumScore(cid,type,v){
+  const c=store.commodities.find(x=>x.id===cid);
+  const score=Number(v)||0;
+  c.sumTol[type].score=score;
+  c.sumTol[type].poor=score;
+  saveStore();
+}
 function addDefect(cid,type){
   const name=prompt("Defect name:"); if(!name) return;
   const c=store.commodities.find(x=>x.id===cid);
-  c.defects.push({key:uid(), name:name, type:type, tol:{good:0,fair:3,poor:6}});
+  c.defects.push({key:uid(), name:name, type:type, score:6, tol:{good:0,fair:3,poor:6}});
   saveStore(); render();
 }
 function delDefect(cid,ix){

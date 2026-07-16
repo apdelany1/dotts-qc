@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "qcapp-shell-v5-columns";
+const CACHE_NAME = "qcapp-shell-v6-score";
 const APP_SHELL = [
   "./",
   "./index.html",

@@ -9,7 +9,7 @@ This update keeps the existing offline-first inspection prototype and adds:
 
 - Editable center-number inputs between the − / + buttons
 - Citrus, Avocado, Kiwi, Stone Fruit, and Banana profiles
-- Three neutral numeric columns in profile settings instead of Good / Fair / Poor labels
+- One editable **Score** input for each field in profile settings
 - More pallet metadata: grower number, counter mark, package/label, pack date, lot number, and F/NF/I
 - Photo renaming after capture
 - Multi-select from the photo library
