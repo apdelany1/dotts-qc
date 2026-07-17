@@ -38,3 +38,9 @@ Inspections remain in browser `localStorage`; photos remain in IndexedDB on that
 
 
 Version 7 adds three pulp temperature readings and two ambient temperature readings. Each reading accepts Fahrenheit or Celsius and automatically converts the other unit.
+
+Version 8 fixes photo pagination in printed/PDF reports. The photo section starts on a fresh page, prints up to four complete photos per page in a 2x2 layout, and uses contain sizing so portrait and landscape images are never cropped or split across pages.
+
+## v9 workflow safeguards
+
+Autosave-before-navigation, return-to-last-row, in-row photo review and defect linking, one-row-per-sample behavior, generic custom profiles, and access-code reveal for prebuilt templates.

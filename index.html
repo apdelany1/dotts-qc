@@ -349,6 +349,30 @@ button,.stepper button{touch-action:manipulation;-webkit-user-select:none;user-s
   .defect-row .name{min-width:calc(100% - 112px)}
 }
 
+
+/* ---------- v9 interrupted-workflow safeguards ---------- */
+.save-state{font-size:11px;font-weight:800;color:rgba(255,255,255,.72);white-space:nowrap;padding:7px 2px;transition:color .18s ease,transform .18s ease}
+.save-state.flash{color:#fff;transform:scale(1.04)}
+.resume-note{display:flex;align-items:center;gap:8px;background:#EEF3FF;border:1px solid #D9E3FF;color:#30466E;border-radius:13px;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:12px}
+.resume-note:before{content:"✓";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#2E5BFF;color:#fff;font-size:11px;flex:none}
+.evidence-card{background:linear-gradient(155deg,#fff,#F7F9FF);border:1px solid #DCE4F5;border-radius:18px;padding:16px;margin:12px 0 18px;box-shadow:var(--shadow-sm)}
+.evidence-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.evidence-head strong{font-size:15px}.evidence-head span{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+.photo-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.photo-mini{border:0;background:#fff;padding:0;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(12,27,51,.1);text-align:left;cursor:pointer}
+.photo-mini img{width:100%;height:82px;object-fit:cover;display:block}
+.photo-mini span{display:block;padding:6px 7px;font-size:10px;font-weight:700;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo-link{font-size:9px!important;color:var(--accent-dark)!important;padding-top:0!important}
+.photo-cell img{cursor:pointer}
+.photo-modal{position:fixed;inset:0;background:rgba(6,14,28,.76);z-index:100;display:flex;align-items:flex-end;justify-content:center;padding:18px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.photo-editor{width:min(100%,620px);max-height:94vh;overflow:auto;background:#fff;border-radius:24px 24px 18px 18px;padding:16px;box-shadow:0 24px 80px rgba(0,0,0,.34)}
+.photo-editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.photo-editor-head strong{font-size:18px}.photo-editor-close{width:38px;height:38px;border:0;border-radius:50%;background:var(--line2);font-size:22px;cursor:pointer}
+.photo-editor img{width:100%;max-height:42vh;object-fit:contain;background:#F2F4F8;border-radius:16px;display:block;margin-bottom:14px}
+.lock-card{background:linear-gradient(145deg,#101E37,#1D355C);color:#fff;border:0}
+.lock-card h2,.lock-card .section-note{color:rgba(255,255,255,.75)}
+.lock-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;font-weight:800;margin-bottom:10px}
+@media(max-width:420px){.photo-mini-grid{grid-template-columns:repeat(2,1fr)}.save-state{display:none}}
 </style>
 <style id="facelift-v1">
 
@@ -545,6 +569,26 @@ table.rt td,table.rt th{padding:10px}
   .report-head .rsub{color:var(--muted)}
   .meta-grid>div{padding:0;background:none;border:0}
   table.rt{border-radius:0}
+
+  /* Print photos on predictable pages so Chrome never slices an image. */
+  #report-photos{break-before:page;page-break-before:always}
+  .rphotos{display:block!important;margin-top:0}
+  .rphotos .photo-print-page{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:repeat(2,auto);gap:8mm 6mm;align-items:start;
+    break-after:page;page-break-after:always;
+  }
+  .rphotos .photo-print-page:last-child{break-after:auto;page-break-after:auto}
+  .rphotos figure{
+    display:block!important;width:auto!important;margin:0!important;min-width:0;
+    break-inside:avoid-page!important;page-break-inside:avoid!important;
+  }
+  .rphotos img{
+    display:block;width:100%;height:82mm;max-height:82mm;object-fit:contain;
+    border:1px solid #D9E0E9;border-radius:4mm;background:#F7F9FC;
+    break-inside:avoid-page!important;page-break-inside:avoid!important;
+  }
+  .rphotos figcaption{margin-top:2mm;font-size:9pt;line-height:1.25;break-inside:avoid}
 }
 
 </style>
@@ -949,7 +993,7 @@ function fieldRow(label, key, insp, type, placeholder){
   const v = insp.meta[key]||"";
   return '<div class="field"><label>'+label+'</label>'+
     '<input type="'+(type||"text")+'" value="'+esc(v)+'" placeholder="'+esc(placeholder||"")+'" '+
-    'onchange=\'setMeta("'+insp.id+'","'+key+'",this.value)\'></div>';
+    'oninput=\'setMeta("'+insp.id+'","'+key+'",this.value)\'></div>';
 }
 function setMeta(id,key,val){ const i=getInsp(id); if(i){ i.meta[key]=val; saveStore(); } }
 function setCommodity(id,cid){ const i=getInsp(id); if(i){ i.commodityId=cid; saveStore(); render(); } }
@@ -1021,7 +1065,7 @@ function setTemperature(id,group,ix,unit,val){
 }
 function detailsBody(insp){
   ensureTemperatureFields(insp);
-  const opts = store.commodities.map(c=>
+  const opts = availableCommodities(insp).map(c=>
     '<option value="'+c.id+'"'+(c.id===insp.commodityId?" selected":"")+'>'+esc(c.name)+'</option>').join("");
   const pulpTemps=Array.from({length:3},(_,ix)=>tempInputCard(insp,"pulp",ix,"Pulp temp "+(ix+1))).join("");
   const ambientTemps=Array.from({length:2},(_,ix)=>tempInputCard(insp,"ambient",ix,"Ambient temperature "+(ix+1))).join("");
@@ -1045,7 +1089,7 @@ function detailsBody(insp){
     '<div class="temp-section-note">Two ambient readings, with automatic °F and °C conversion.</div>'+
     '<div class="temp-readings ambient">'+ambientTemps+'</div></div>'+
   '<div class="card"><h2>Notes</h2>'+
-    '<div class="field"><textarea placeholder="Free observations…" onchange=\'setMeta("'+insp.id+'","notes",this.value)\'>'+esc(insp.meta.notes||"")+'</textarea></div></div>'+
+    '<div class="field"><textarea placeholder="Free observations…" oninput=\'setMeta("'+insp.id+'","notes",this.value)\'>'+esc(insp.meta.notes||"")+'</textarea></div></div>'+
   '<button class="btn btn-danger btn-block no-print" onclick=\'deleteInspection("'+insp.id+'")\'>Delete inspection</button>';
 }
 
@@ -1089,7 +1133,7 @@ function palletDetail(insp,p,prof){
     .concat(prof.defects.map(d=>d.name))
     .map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
   const pf = (label,key,type,ph)=>'<div class="field"><label>'+label+'</label>'+
-    '<input type="'+(type||"text")+'" value="'+esc(p[key]||"")+'" placeholder="'+esc(ph||"")+'" onchange=\'setPallet("'+insp.id+'","'+p.id+'","'+key+'",this.value)\'></div>';
+    '<input type="'+(type||"text")+'" value="'+esc(p[key]||"")+'" placeholder="'+esc(ph||"")+'" oninput=\'setPallet("'+insp.id+'","'+p.id+'","'+key+'",this.value)\'></div>';
   const samples=(p.samples||[]).map((s,ix)=>{
     const cs=computeSample(s,prof);
     return '<div class="pallet-item" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'",sampleId:"'+s.id+'"})\'>'+
@@ -1119,7 +1163,7 @@ function palletDetail(insp,p,prof){
     '<div class="photo-help">You can select several library photos at once. After a photo is added, use Rename or Save to Photos. iPhone web apps cannot silently write a camera capture into the Photos library.</div>'+
     '<div class="photo-grid" id="photo-grid"></div></div>'+
   '<button class="btn btn-danger btn-block" onclick=\'delPallet("'+insp.id+'","'+p.id+'")\'>Delete pallet</button>'+
-  '<div class="fab-bar raised"><div class="inner"><button class="btn btn-primary btn-block" onclick=\'addSample("'+insp.id+'","'+p.id+'")\'>+ Add sample</button></div></div>';
+  '<div class="fab-bar raised"><div class="inner"><button class="btn btn-primary btn-block" onclick=\'addSample("'+insp.id+'","'+p.id+'")\'>+ Add another inspection row</button></div></div>';
 }
 function addSample(id,pid){
   const p=getInsp(id).pallets.find(x=>x.id===pid);
@@ -1168,7 +1212,7 @@ function sampleBody(insp,p,prof){
   const rows = prof.defects.map(row).join("");
   return '<button class="linkbtn" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'"})\'>&#8592; '+esc(p.label||"Pallet")+'</button>'+
     '<div class="samplebar"><div class="sums" id="sample-sums">Qual '+fmt(cs.sumQ)+'% · Cond '+fmt(cs.sumC)+'%</div><span id="sample-pill">'+pill(cs.grade)+'</span></div>'+
-    '<div class="card"><div class="field"><label>Sample size (fruit inspected)</label><input type="number" inputmode="numeric" value="'+esc(s.size)+'" onfocus="this.select()" onchange=\'setSize("'+insp.id+'","'+p.id+'","'+s.id+'",this.value)\'></div></div>'+
+    '<div class="card"><div class="field"><label>Sample size (fruit inspected)</label><input type="number" inputmode="numeric" value="'+esc(s.size)+'" onfocus="this.select()" oninput=\'setSize("'+insp.id+'","'+p.id+'","'+s.id+'",this.value)\'></div></div>'+
     '<div class="section-note">Enter one number for each field. Use − / + for small changes, or tap the center number and type the count directly.</div>'+
     '<div class="defect-group-title">Inspection counts</div>'+rows+
     '<div style="height:8px"></div><button class="btn btn-danger btn-block" onclick=\'delSample("'+insp.id+'","'+p.id+'","'+s.id+'")\'>Delete sample</button>';
@@ -1461,20 +1505,20 @@ async function deletePhotosWhere(fn){
   const list = await getPhotosBy(fn);
   for(const p of list) await deletePhotoById(p.id);
 }
-/* compress to max 1200px JPEG so a full inspection stays small */
+/* Preserve practical inspection detail while keeping offline storage manageable. */
 function compressImage(file){
   return new Promise(res=>{
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const max = 1200;
+      const max = 2400;
       const s = Math.min(1, max/Math.max(img.width, img.height));
       const w = Math.round(img.width*s), h = Math.round(img.height*s);
       const c = document.createElement("canvas");
       c.width = w; c.height = h;
       c.getContext("2d").drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
-      res(c.toDataURL("image/jpeg", 0.8));
+      res(c.toDataURL("image/jpeg", 0.92));
     };
     img.onerror = () => { URL.revokeObjectURL(url); res(null); };
     img.src = url;
@@ -1542,11 +1586,17 @@ async function loadReportPhotos(insp){
   };
   const order = new Map((insp.pallets||[]).map((p,ix)=>[p.id,ix]));
   photos.sort((a,b)=>(order.get(a.palletId)??99)-(order.get(b.palletId)??99) || a.createdAt-b.createdAt);
+  const photoPages=[];
+  for(let i=0;i<photos.length;i+=4){
+    photoPages.push(
+      '<div class="photo-print-page">'+photos.slice(i,i+4).map(ph=>
+        '<figure><img src="'+ph.dataUrl+'" alt=""><figcaption>'+esc(labelOf(ph.palletId))+': '+esc(ph.tag)+'</figcaption></figure>'
+      ).join("")+'</div>'
+    );
+  }
   box.innerHTML =
     '<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:18px">Pictures</h2>'+
-    '<div class="rphotos">'+photos.map(ph=>
-      '<figure><img src="'+ph.dataUrl+'" alt=""><figcaption>'+esc(labelOf(ph.palletId))+': '+esc(ph.tag)+'</figcaption></figure>'
-    ).join("")+'</div>';
+    '<div class="rphotos">'+photoPages.join("")+'</div>';
 }
 
 /* ---------------- backup: export / import ---------------- */
@@ -1610,10 +1660,189 @@ if("serviceWorker" in navigator && location.protocol !== "file:"){
 }
 
 try{ history.replaceState(route, ""); }catch(e){}
+
 window.addEventListener("popstate", e=>{
+  flushCurrentInput(); rememberInspectionRoute(route);
   route = (e.state && e.state.view) ? e.state : {view:"home"};
-  render(); window.scrollTo(0,0);
+  rememberInspectionRoute(route); render(); window.scrollTo(0,0);
 });
+
+/* ---------------- v9 workflow overrides ---------------- */
+const QCAPP_VERSION="9.0";
+const PREBUILT_IDS=new Set(["citrus","avocado","kiwi","stone-fruit","banana"]);
+function makeGenericProfile(id="custom-default",name="Custom Template"){
+  return {id,name,builtIn:false,sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},defects:[
+    {key:uid(),name:"Quality Defect 1",type:"quality",tol:{good:0,fair:3,poor:6}},
+    {key:uid(),name:"Quality Defect 2",type:"quality",tol:{good:0,fair:3,poor:6}},
+    {key:uid(),name:"Condition Defect 1",type:"condition",tol:{good:0,fair:3,poor:6}},
+    {key:uid(),name:"Condition Defect 2",type:"condition",tol:{good:0,fair:3,poor:6}}
+  ]};
+}
+function migrateWorkflowV9(){
+  store.commodities=Array.isArray(store.commodities)?store.commodities:[];
+  store.inspections=Array.isArray(store.inspections)?store.inspections:[];
+  store.commodities.forEach(c=>c.builtIn=PREBUILT_IDS.has(c.id));
+  if(!store.commodities.some(c=>c.id==="custom-default")) store.commodities.unshift(makeGenericProfile());
+  if(typeof store.templateUnlocked!=="boolean") store.templateUnlocked=false;
+  store.schemaVersion=Math.max(Number(store.schemaVersion)||0,5);
+  saveStore();
+}
+function availableCommodities(insp){
+  const current=insp&&insp.commodityId;
+  return store.commodities.filter(c=>!c.builtIn||store.templateUnlocked||c.id===current);
+}
+function unlockTemplates(){
+  const code=prompt("Enter access code:");
+  if(code===null) return;
+  if(String(code).trim()!=="7669"){alert("That code is not correct.");return;}
+  store.templateUnlocked=true;saveStore();render();
+}
+addCommodity=function(){
+  const name=prompt("Name for the new commodity profile:");if(!name)return;
+  const c=makeGenericProfile(uid(),name);store.commodities.push(c);saveStore();go({view:"settings",commodityId:c.id});
+};
+
+const baseSaveStore=saveStore;
+let saveFlashTimer=null;
+saveStore=function(){
+  baseSaveStore();
+  const el=document.getElementById("autosave-status");if(!el)return;
+  el.textContent="Saved";el.classList.add("flash");clearTimeout(saveFlashTimer);saveFlashTimer=setTimeout(()=>el.classList.remove("flash"),450);
+};
+function flushCurrentInput(){
+  const el=document.activeElement;
+  if(el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)){
+    try{el.dispatchEvent(new Event(el.tagName==="SELECT"?"change":"input",{bubbles:true}));}catch(e){}
+    try{el.dispatchEvent(new Event("change",{bubbles:true}));}catch(e){}
+  }
+  saveStore();
+}
+function rememberInspectionRoute(r){
+  if(!r||r.view!=="inspection"||!r.id)return;
+  const insp=getInsp(r.id);if(!insp)return;insp.ui=insp.ui||{};
+  if(r.tab)insp.ui.lastTab=r.tab;
+  if(r.tab==="pallets"&&r.palletId){insp.ui.lastPalletId=r.palletId;insp.ui.lastSampleId=r.sampleId||"";}
+}
+function tabTarget(insp,tab){
+  if(tab!=="pallets")return{view:"inspection",id:insp.id,tab};
+  const ui=insp.ui||{};const p=(insp.pallets||[]).find(x=>x.id===ui.lastPalletId);
+  if(!p)return{view:"inspection",id:insp.id,tab:"pallets"};
+  const sample=(p.samples||[]).find(x=>x.id===ui.lastSampleId);
+  return{view:"inspection",id:insp.id,tab:"pallets",palletId:p.id,...(sample?{sampleId:sample.id}:{})};
+}
+go=function(r){
+  flushCurrentInput();rememberInspectionRoute(route);rememberInspectionRoute(r);route=r;
+  try{history.pushState(r,"");}catch(e){}render();window.scrollTo(0,0);
+};
+isPristine=function(){return false;};
+
+newInspection=function(){
+  const generic=store.commodities.find(c=>c.id==="custom-default")||store.commodities.find(c=>!c.builtIn)||store.commodities[0];
+  const insp={id:uid(),createdAt:Date.now(),commodityId:generic.id,meta:{type:"Arrival Inspection",specie:"",vessel:"",container:"",warehouse:"",date:new Date().toISOString().slice(0,10),did:"",notes:""},pulpTemps:Array.from({length:3},()=>({f:"",c:""})),ambientTemps:Array.from({length:2},()=>({f:"",c:""})),pallets:[]};
+  store.inspections.push(insp);saveStore();go({view:"inspection",id:insp.id,tab:"details"});
+};
+
+renderInspection=function(){
+  const insp=getInsp(route.id);if(!insp){go({view:"home"});return;}
+  const m=insp.meta;const tab=route.tab||"details";let body="";
+  if(tab==="details")body=detailsBody(insp);if(tab==="pallets")body=palletsBody(insp);if(tab==="report")body=reportBody(insp);
+  const tabs=["details","pallets","report"].map(t=>{const target=tabTarget(insp,t);return'<button class="tab '+(t===tab?'on':'')+'" onclick=\'go('+JSON.stringify(target)+')\'>'+t+'</button>';}).join("");
+  const right='<span class="save-state" id="autosave-status">Saved</span>'+(tab==="report"?'<button class="iconbtn" onclick="window.print()">Print / PDF</button>':'');
+  $app().innerHTML=topbar(m.container||m.specie||"New inspection",m.type||"Inspection",{view:"home"},right)+'<div class="screen tabbed">'+body+'</div><div class="tabs">'+tabs+'</div>';
+};
+
+renderSettings=function(){
+  if(route.commodityId){renderCommodity();return;}
+  const visible=store.commodities.filter(c=>!c.builtIn||store.templateUnlocked);
+  const items=visible.map(c=>'<div class="insp-item" onclick=\'go({view:"settings",commodityId:"'+c.id+'"})\'><div class="insp-main"><div class="l1">'+esc(c.name)+'</div><div class="l2">'+c.defects.length+' fields · tap to edit scores</div></div><span>&#8250;</span></div>').join("");
+  const lock=!store.templateUnlocked?'<div class="card lock-card"><div class="lock-badge">🔒 PREBUILT TEMPLATES</div><h2>Commodity templates are locked</h2><div class="section-note">Custom profiles remain available. Enter the access code to reveal the prebuilt commodity profiles on this device.</div><button class="btn btn-ghost btn-block" onclick="unlockTemplates()">Enter access code</button></div>':'';
+  $app().innerHTML=topbar("Settings","Commodity profiles",{view:"home"})+'<div class="screen">'+storageNotice()+lock+items+
+    '<button class="btn btn-ghost btn-block" onclick="addCommodity()">+ New custom profile</button><div class="section-note" style="margin-top:14px">Start with generic Quality and Condition fields, then rename, add, or remove them. QCapp v'+QCAPP_VERSION+'.</div>'+ 
+    '<div class="card" style="margin-top:14px"><h2>Install &amp; offline use</h2><div class="section-note">Install this site after opening it once online. Inspection records and photos stay on this browser/device.</div><button class="btn btn-ghost btn-block" onclick="installApp()">Install app / instructions</button></div>'+ 
+    '<div class="card" style="margin-top:14px"><h2>Data backup</h2><div class="section-note">Export inspection and profile data at the end of each inspection day. Photos remain on the phone and in the PDF report.</div><div class="row-actions"><button class="btn btn-ghost" style="flex:1" onclick="exportBackup()">Export backup</button><button class="btn btn-ghost" style="flex:1" onclick="document.getElementById(\'imp-file\').click()">Import backup</button></div><input type="file" id="imp-file" accept=".json,application/json" style="display:none" onchange="importBackup(this)"></div></div>';
+};
+
+addPallet=function(id){
+  const insp=getInsp(id);const sample={id:uid(),size:100,counts:{},measures:{}};
+  const p={id:uid(),label:"Pallet "+((insp.pallets||[]).length+1),exporter:"",variety:"",grower:"",growerNo:"",counterMark:"",package:"",packDate:"",lotNo:"",treatment:"",size:"",cases:"",samples:[sample]};
+  insp.pallets.push(p);saveStore();go({view:"inspection",id,tab:"pallets",palletId:p.id,sampleId:sample.id});
+};
+function duplicatePalletRow(id,pid){
+  const insp=getInsp(id);const src=insp&&insp.pallets.find(x=>x.id===pid);if(!src)return;
+  const sample={id:uid(),size:(src.samples&&src.samples[0]?src.samples[0].size:100)||100,counts:{},measures:{}};
+  const base=(src.label||"Pallet").replace(/-\d+$/,"");let suffix=2;let label=base+"-2";
+  while(insp.pallets.some(p=>p.label===label)){suffix++;label=base+"-"+suffix;}
+  const copy={...src,id:uid(),label,samples:[sample]};insp.pallets.push(copy);saveStore();go({view:"inspection",id,tab:"pallets",palletId:copy.id,sampleId:sample.id});
+}
+addSample=function(id,pid){
+  const p=getInsp(id).pallets.find(x=>x.id===pid);if(!p)return;
+  if(!(p.samples||[]).length){const s={id:uid(),size:100,counts:{},measures:{}};p.samples=[s];saveStore();go({view:"inspection",id,tab:"pallets",palletId:pid,sampleId:s.id});return;}
+  duplicatePalletRow(id,pid);
+};
+delSample=function(id,pid,sid){
+  const insp=getInsp(id);const p=insp&&insp.pallets.find(x=>x.id===pid);if(!p)return;
+  if((p.samples||[]).length<=1){if(!confirm("Delete this inspection row and its photos?"))return;delPallet(id,pid);return;}
+  if(!confirm("Delete this sample?"))return;p.samples=p.samples.filter(s=>s.id!==sid);saveStore();go({view:"inspection",id,tab:"pallets",palletId:pid});
+};
+setSize=function(id,pid,sid,val){
+  const found=findSample(id,pid,sid);if(!found||!found.s)return;const{insp,p,s,prof}=found;s.size=Math.max(0,Number(val)||0);
+  Object.keys(s.counts||{}).forEach(k=>s.counts[k]=clampCount(s,s.counts[k]));prof.defects.forEach(d=>applyIncludedRelationship(s,prof,d.key));saveStore();refreshSampleLive(insp,p,s,prof);
+};
+
+palletsBody=function(insp){
+  const prof=commodityOf(insp);
+  if(route.palletId){const p=insp.pallets.find(x=>x.id===route.palletId);if(p)return route.sampleId?sampleBody(insp,p,prof):palletDetail(insp,p,prof);}
+  const items=(insp.pallets||[]).map((p,ix)=>{const c=computePallet(p,prof);const direct=(p.samples||[]).length===1;const target=direct?{view:"inspection",id:insp.id,tab:"pallets",palletId:p.id,sampleId:p.samples[0].id}:{view:"inspection",id:insp.id,tab:"pallets",palletId:p.id};return'<div class="pallet-item" onclick=\'go('+JSON.stringify(target)+')\'><div class="num">'+(ix+1)+'</div><div class="insp-main"><div class="l1">'+esc(p.label||("Pallet "+(ix+1)))+(p.exporter?' · '+esc(p.exporter):'')+'</div><div class="stat-strip"><span>'+c.samples+' inspection row'+(c.samples===1?'':'s')+'</span><span>'+esc(p.cases||0)+' cases</span><span>Q '+fmt(c.avgQ)+'%</span><span>C '+fmt(c.avgC)+'%</span></div></div>'+pill(c.grade)+'</div>';}).join("");
+  return(items||'<div class="empty"><div class="big">&#127818;</div>No inspection rows yet.<br>Add the first row to begin.</div>')+'<div class="fab-bar raised"><div class="inner"><button class="btn btn-primary btn-block" onclick=\'addPallet("'+insp.id+'")\'>+ Add inspection row</button></div></div>';
+};
+
+sampleBody=function(insp,p,prof){
+  const s=p.samples.find(x=>x.id===route.sampleId);if(!s)return palletDetail(insp,p,prof);const cs=computeSample(s,prof);setTimeout(()=>loadSamplePhotos(insp.id,p.id,s.id),0);
+  const row=d=>{const nested=d.includedIn?" nested-defect":"";const parent=d.includedIn?prof.defects.find(x=>x.key===d.includedIn):null;const includedNote=parent?'<div class="included-note">Included in '+esc(parent.name)+'</div>':'';
+    if(d.measure){const v=s.measures&&s.measures[d.key];return'<div class="defect-row'+nested+'" id="dr-'+d.key+'"><div class="name">'+esc(d.name)+includedNote+'</div><div class="pct" id="pct-'+d.key+'"></div><div class="stepper"><input type="number" step="0.1" inputmode="decimal" value="'+esc(v==null?'':v)+'" onfocus="this.select()" oninput=\'setMeasure("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\'></div></div>';}
+    const cnt=Number(s.counts&&s.counts[d.key])||0;const pct=cs.perDefect[d.key].pct;const sampleMax=Math.max(Number(s.size)||100,100);const parentMax=parent?Math.max(Number(s.counts&&s.counts[parent.key])||0,cnt):sampleMax;
+    return'<div class="defect-row'+nested+'" id="dr-'+d.key+'"><div class="name">'+esc(d.name)+includedNote+'</div><div class="pct" id="pct-'+d.key+'">'+fmt(pct)+'%</div><div class="stepper"><button type="button" onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",-1)\'>&minus;</button><input class="count-input" id="val-'+d.key+'" type="number" inputmode="numeric" min="0" max="'+parentMax+'" step="1" value="'+cnt+'" onfocus="this.select()" aria-label="'+esc(d.name)+' count" oninput=\'setCount("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\'><button type="button" onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",1)\'>+</button></div></div>';};
+  const rows=prof.defects.map(row).join("");
+  return'<div class="row-actions"><button class="linkbtn" style="flex:1;text-align:left" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets"})\'>&#8592; All rows</button><button class="linkbtn" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'"})\'>Row details</button></div>'+ 
+    '<div class="resume-note">Everything saves while you type. Switching tabs returns you to this same row.</div>'+ 
+    '<div class="samplebar"><div class="sums" id="sample-sums">Qual '+fmt(cs.sumQ)+'% · Cond '+fmt(cs.sumC)+'%</div><span id="sample-pill">'+pill(cs.grade)+'</span></div>'+ 
+    '<div class="card"><div class="field"><label>Sample size (fruit inspected)</label><input type="number" inputmode="numeric" value="'+esc(s.size)+'" onfocus="this.select()" oninput=\'setSize("'+insp.id+'","'+p.id+'","'+s.id+'",this.value)\'></div></div>'+ 
+    '<div class="evidence-card"><div class="evidence-head"><div><strong>Photo evidence</strong><span>Review photos and enter counts without leaving this row.</span></div></div><div class="row-actions"><button class="btn btn-primary btn-sm" style="flex:1" onclick=\'triggerPhoto("sample-photo-cam")\'>&#128247; Take photo</button><button class="btn btn-ghost btn-sm" style="flex:1" onclick=\'triggerPhoto("sample-photo-gal")\'>Library</button></div><input type="file" id="sample-photo-cam" accept="image/*" capture="environment" style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this,"'+s.id+'")\'><input type="file" id="sample-photo-gal" accept="image/*" multiple style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this,"'+s.id+'")\'><div class="photo-mini-grid" id="sample-photo-grid"></div></div>'+ 
+    '<div class="section-note">Use − / + for small changes, or tap the center number and type the count directly.</div><div class="defect-group-title">Inspection counts</div>'+rows+ 
+    '<div style="height:8px"></div><button class="btn btn-ghost btn-block" onclick=\'duplicatePalletRow("'+insp.id+'","'+p.id+'")\'>+ Add another inspection row</button><button class="btn btn-danger btn-block" style="margin-top:10px" onclick=\'delSample("'+insp.id+'","'+p.id+'","'+s.id+'")\'>Delete inspection row</button>';
+};
+
+handlePhoto=async function(inspId,palletId,input,sampleId=""){
+  const files=Array.from(input.files||[]);input.value="";if(!files.length)return;const sel=document.getElementById("photo-tag");const tag=sel?sel.value:"General";const added=[];
+  for(const f of files){const dataUrl=await compressImage(f);if(!dataUrl)continue;const ph={id:uid(),inspId,palletId,sampleId,tag,originalName:f.name||"",dataUrl,createdAt:Date.now(),defectKey:"",defectCount:""};await putPhoto(ph);added.push(ph);}
+  loadPalletPhotos(inspId,palletId);if(sampleId)loadSamplePhotos(inspId,palletId,sampleId);if(added[0])openPhotoEditor(added[0].id,inspId,palletId,sampleId);
+};
+async function loadSamplePhotos(inspId,palletId,sampleId){
+  const grid=document.getElementById("sample-photo-grid");if(!grid)return;const photos=await getPhotosBy(p=>p.palletId===palletId);
+  grid.innerHTML=photos.length?photos.map(ph=>{const linked=ph.defectKey?'<span class="photo-link">Linked count: '+esc(ph.defectCount||0)+'</span>':'';return'<button class="photo-mini" type="button" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+sampleId+'")\'><img src="'+ph.dataUrl+'" alt=""><span>'+esc(ph.tag||"Photo")+'</span>'+linked+'</button>';}).join(""):'<div class="section-note" style="grid-column:1/-1;margin:0">No photos yet.</div>';
+}
+loadPalletPhotos=async function(inspId,palletId){
+  const grid=document.getElementById("photo-grid");if(!grid)return;const photos=await getPhotosBy(p=>p.palletId===palletId);
+  grid.innerHTML=photos.length?photos.map(ph=>'<div class="photo-cell"><img src="'+ph.dataUrl+'" alt="'+esc(ph.tag)+'" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+esc(ph.sampleId||"")+'")\'><button class="photo-del" onclick=\'removePhoto("'+ph.id+'","'+inspId+'","'+palletId+'")\'>&times;</button><div class="photo-tag">'+esc(ph.tag)+'</div><div class="photo-tools"><button class="photo-tool" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+esc(ph.sampleId||"")+'")\'>Review</button><button class="photo-tool" onclick=\'savePhotoToDevice("'+ph.id+'")\'>Save to Photos</button></div></div>').join(""):'<div class="section-note" style="grid-column:1/-1">No photos yet.</div>';
+};
+function closePhotoEditor(){const el=document.getElementById("photo-editor-modal");if(el)el.remove();}
+async function openPhotoEditor(id,inspId,palletId,sampleId=""){
+  const ph=await findPhoto(id);if(!ph)return;const insp=getInsp(inspId);if(!insp)return;const prof=commodityOf(insp);
+  const opts='<option value="">Not linked to a count</option>'+prof.defects.filter(d=>!d.measure).map(d=>'<option value="'+esc(d.key)+'"'+(ph.defectKey===d.key?' selected':'')+'>'+esc(d.name)+'</option>').join("");
+  const modal=document.createElement("div");modal.id="photo-editor-modal";modal.className="photo-modal";modal.innerHTML='<div class="photo-editor"><div class="photo-editor-head"><strong>Review photo</strong><button class="photo-editor-close" onclick="closePhotoEditor()">&times;</button></div><img src="'+ph.dataUrl+'" alt=""><div class="field"><label>Photo name / caption</label><input id="photo-edit-tag" type="text" value="'+esc(ph.tag||"General")+'"></div><div class="field"><label>Link to inspection field</label><select id="photo-edit-defect">'+opts+'</select></div><div class="field"><label>Number affected</label><input id="photo-edit-count" type="number" inputmode="numeric" min="0" value="'+esc(ph.defectCount??"")+'" placeholder="Enter count"></div><div class="section-note">Saving a linked number writes it into the matching field on this inspection row. It can still be edited directly afterward.</div><div class="row-actions"><button class="btn btn-ghost" style="flex:1" onclick=\'savePhotoToDevice("'+id+'")\'>Save to Photos</button><button class="btn btn-primary" style="flex:1.4" onclick=\'savePhotoEditor("'+id+'","'+inspId+'","'+palletId+'","'+(sampleId||ph.sampleId||"")+'")\'>Save photo</button></div></div>';
+  modal.addEventListener("click",e=>{if(e.target===modal)closePhotoEditor();});document.body.appendChild(modal);
+}
+async function savePhotoEditor(id,inspId,palletId,sampleId){
+  const ph=await findPhoto(id);if(!ph)return;const tag=document.getElementById("photo-edit-tag"),defect=document.getElementById("photo-edit-defect"),count=document.getElementById("photo-edit-count");
+  ph.tag=(tag&&tag.value.trim())||"General";ph.defectKey=defect?defect.value:"";ph.defectCount=count?count.value:"";ph.sampleId=sampleId||ph.sampleId||"";
+  if(ph.defectKey&&ph.sampleId&&ph.defectCount!==""){const found=findSample(inspId,palletId,ph.sampleId);if(found&&found.s){found.s.counts=found.s.counts||{};found.s.counts[ph.defectKey]=clampCount(found.s,ph.defectCount);applyIncludedRelationship(found.s,found.prof,ph.defectKey);saveStore();}}
+  await putPhoto(ph);closePhotoEditor();loadPalletPhotos(inspId,palletId);if(ph.sampleId)loadSamplePhotos(inspId,palletId,ph.sampleId);const found=ph.sampleId?findSample(inspId,palletId,ph.sampleId):null;if(found&&found.s)refreshSampleLive(found.insp,found.p,found.s,found.prof);
+}
+
+window.addEventListener("pagehide",flushCurrentInput);
+window.addEventListener("beforeunload",flushCurrentInput);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushCurrentInput();});
+migrateWorkflowV9();
 render();
 </script>
 </body>

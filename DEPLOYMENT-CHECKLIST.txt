@@ -12,3 +12,9 @@ QCAPP UPDATE CHECKLIST
 
 
 Version 7 adds three pulp temperature readings and two ambient temperature readings. Each reading accepts Fahrenheit or Celsius and automatically converts the other unit.
+
+V8 PDF PHOTO CHECK
+- Generate a report with at least 5 photos.
+- Print / Save as PDF.
+- Confirm the Pictures section starts on a new page.
+- Confirm no photo is divided between two pages.
