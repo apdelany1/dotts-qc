@@ -373,6 +373,44 @@ button,.stepper button{touch-action:manipulation;-webkit-user-select:none;user-s
 .lock-card h2,.lock-card .section-note{color:rgba(255,255,255,.75)}
 .lock-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;font-weight:800;margin-bottom:10px}
 @media(max-width:420px){.photo-mini-grid{grid-template-columns:repeat(2,1fr)}.save-state{display:none}}
+
+/* ---------- v10 workflow, documents, editable temperatures ---------- */
+.document-upload{
+  border:1px dashed #BFC9D8;border-radius:15px;padding:14px;background:#F8FAFD;
+}
+.document-upload .row-actions{margin-top:10px}
+.document-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.document-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.document-icon{width:38px;height:38px;border-radius:11px;background:var(--accent-soft);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex:none}
+.document-main{min-width:0;flex:1}
+.document-name{font-size:13px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.document-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.document-actions{display:flex;gap:4px;flex:none}
+.document-actions button{border:0;background:transparent;color:var(--accent-dark);font-size:12px;font-weight:750;padding:7px;cursor:pointer}
+.temp-reading-card{position:relative}
+.temp-label-edit{width:100%;border:0;border-bottom:1px solid transparent;background:transparent;font:inherit;font-size:14px;font-weight:800;color:var(--ink);padding:2px 0 7px;margin-bottom:3px}
+.temp-label-edit:focus{outline:none;border-bottom-color:var(--accent)}
+.row-start-card{border:1px solid rgba(46,91,255,.16);box-shadow:0 10px 28px rgba(46,91,255,.08)}
+.row-primary-field input{font-size:19px;font-weight:800;padding:16px}
+.row-primary-field label{color:var(--accent-dark)}
+.row-flow-actions{display:flex;gap:10px;position:sticky;bottom:92px;z-index:12;padding:10px 0;background:linear-gradient(transparent,var(--bg) 28%)}
+.photo-type-badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;margin-top:4px}
+.photo-extra{margin-top:8px;padding:12px;border-radius:13px;background:#F7F9FC;border:1px solid var(--line)}
+.photo-extra[hidden]{display:none!important}
+.photo-comments{min-height:82px!important}
+.photo-seed{max-width:180px}
+.topbar .row-shortcut{padding:9px 12px;white-space:nowrap}
+.settings-toggle{display:flex;align-items:flex-start;gap:11px}
+.settings-toggle input{width:20px;height:20px;margin-top:1px;accent-color:var(--accent)}
+.settings-toggle strong{display:block;font-size:14px}
+.settings-toggle span{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
+.report-docs{margin-top:18px;page-break-inside:avoid}
+.report-docs ul{padding-left:18px;margin:7px 0 0;font-size:13px}
+@media(max-width:420px){
+  .document-actions{flex-direction:column}
+  .topbar .row-shortcut{font-size:12px;padding:8px 10px}
+}
+
 </style>
 <style id="facelift-v1">
 
@@ -1080,7 +1118,7 @@ function detailsBody(insp){
       fieldRow("Container no.","container",insp,"text","e.g. HLBU6149803")+
       fieldRow("Warehouse","warehouse",insp,"text","e.g. CWPL")+
       fieldRow("Inspection date","date",insp,"date")+
-      fieldRow("DID","did",insp,"text","Document ID")+
+      fieldRow("Manifest / reference","documentRef",insp,"text","Manifest or reference no.")+
     '</div></div>'+
   '<div class="card"><h2>Pulp temperatures</h2>'+
     '<div class="temp-section-note">Enter either Fahrenheit or Celsius. QCapp fills in the matching value automatically.</div>'+
@@ -1333,7 +1371,7 @@ function reportBody(insp){
       '<div><div class="k">Container</div><div class="v">'+esc(m.container||"\u2014")+'</div></div>'+
       '<div><div class="k">Warehouse</div><div class="v">'+esc(m.warehouse||"\u2014")+'</div></div>'+
       '<div><div class="k">Inspection date</div><div class="v">'+esc(m.date||"\u2014")+'</div></div>'+
-      '<div><div class="k">DID</div><div class="v">'+esc(m.did||"\u2014")+'</div></div>'+
+      '<div><div class="k">Manifest / reference</div><div class="v">'+esc(m.documentRef||m.did||"\u2014")+'</div></div>'+
     '</div>'+
     (pulpTemps?'<div class="temps-inline"><strong>Pulp temps:</strong> '+pulpTemps+'</div>':'')+
     (ambientTemps?'<div class="temps-inline"><strong>Ambient temps:</strong> '+ambientTemps+'</div>':'')+
@@ -1668,7 +1706,7 @@ window.addEventListener("popstate", e=>{
 });
 
 /* ---------------- v9 workflow overrides ---------------- */
-const QCAPP_VERSION="9.0";
+const QCAPP_VERSION="10.0";
 const PREBUILT_IDS=new Set(["citrus","avocado","kiwi","stone-fruit","banana"]);
 function makeGenericProfile(id="custom-default",name="Custom Template"){
   return {id,name,builtIn:false,sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},defects:[
@@ -1839,10 +1877,232 @@ async function savePhotoEditor(id,inspId,palletId,sampleId){
   await putPhoto(ph);closePhotoEditor();loadPalletPhotos(inspId,palletId);if(ph.sampleId)loadSamplePhotos(inspId,palletId,ph.sampleId);const found=ph.sampleId?findSample(inspId,palletId,ph.sampleId):null;if(found&&found.s)refreshSampleLive(found.insp,found.p,found.s,found.prof);
 }
 
+
+/* ---------------- v10 field-workflow upgrades ---------------- */
+const QCAPP_VERSION_V10="10.0";
+const DOC_MAX_BYTES=25*1024*1024;
+const DOC_ACCEPT=".pdf,.xls,.xlsx,.csv,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv";
+const PHOTO_TYPES=[
+  ["general","General"],["pallet-label","Pallet Label"],["carton-marks","Carton Marks"],
+  ["packaging","Packaging"],["open-appearance","Open Appearance"],["cut-samples","Cut Samples"],
+  ["temperature","Temperature"],["defect","Defect Photo"],["other","Other"]
+];
+function migrateWorkflowV10(){
+  store.inspections.forEach(insp=>{
+    insp.meta=insp.meta||{};
+    if(insp.meta.documentRef==null) insp.meta.documentRef=insp.meta.did||"";
+    ensureTemperatureFieldsV10(insp);
+  });
+  if(typeof store.promptPhotoSave!=="boolean") store.promptPhotoSave=true;
+  store.schemaVersion=Math.max(Number(store.schemaVersion)||0,6);
+  saveStore();
+}
+function defaultTempLabel(group,ix){return group==="pulp"?"Pulp temp "+(ix+1):"Ambient temperature "+(ix+1);}
+function normalizeTempPairV10(pair,group,ix){
+  const fallback=defaultTempLabel(group,ix);
+  if(pair&&typeof pair==="object"&&!Array.isArray(pair)){
+    return {f:String(pair.f??""),c:String(pair.c??""),label:String(pair.label||fallback)};
+  }
+  if(pair==null||pair==="") return {f:"",c:"",label:fallback};
+  const c=Number(pair);
+  return Number.isFinite(c)?{c:tempDisplay(c),f:tempDisplay(c*9/5+32),label:fallback}:{f:"",c:"",label:fallback};
+}
+function ensureTemperatureFieldsV10(insp){
+  const legacy=Array.isArray(insp.temps)?insp.temps:[];
+  insp.pulpTemps=Array.from({length:3},(_,ix)=>normalizeTempPairV10(Array.isArray(insp.pulpTemps)?insp.pulpTemps[ix]:legacy[ix],"pulp",ix));
+  insp.ambientTemps=Array.from({length:2},(_,ix)=>normalizeTempPairV10(Array.isArray(insp.ambientTemps)?insp.ambientTemps[ix]:null,"ambient",ix));
+}
+ensureTemperatureFields=ensureTemperatureFieldsV10;
+normalizeTempPair=function(pair){return normalizeTempPairV10(pair,"pulp",0);};
+function setTemperatureLabel(id,group,ix,val){
+  const insp=getInsp(id);if(!insp)return;ensureTemperatureFieldsV10(insp);
+  const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;
+  arr[ix].label=String(val||"");saveStore();
+}
+tempInputCard=function(insp,group,ix){
+  ensureTemperatureFieldsV10(insp);
+  const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;const pair=arr[ix];const base="temp-"+group+"-"+ix;
+  return '<div class="temp-reading-card">'+
+    '<input class="temp-label-edit" type="text" value="'+esc(pair.label||defaultTempLabel(group,ix))+'" aria-label="Temperature reading label" oninput=\'setTemperatureLabel("'+insp.id+'","'+group+'",'+ix+',this.value)\'>'+
+    '<div class="temp-unit-row"><label for="'+base+'-f">°F</label><input id="'+base+'-f" type="number" inputmode="decimal" step="0.1" value="'+esc(pair.f)+'" placeholder="70.0" oninput=\'setTemperature("'+insp.id+'","'+group+'",'+ix+',"f",this.value)\'></div>'+
+    '<div class="temp-unit-row"><label for="'+base+'-c">°C</label><input id="'+base+'-c" type="number" inputmode="decimal" step="0.1" value="'+esc(pair.c)+'" placeholder="21.1" oninput=\'setTemperature("'+insp.id+'","'+group+'",'+ix+',"c",this.value)\'></div></div>';
+};
+
+/* Inspection-level manifest / spreadsheet / PDF attachments. */
+let documentDB=null,documentsMemOnly=false;const documentMem=new Map();
+function openDocumentDB(){
+  return new Promise(res=>{
+    if(documentsMemOnly)return res(null);if(documentDB)return res(documentDB);
+    try{const req=indexedDB.open("qcapp-documents",1);req.onupgradeneeded=e=>e.target.result.createObjectStore("documents",{keyPath:"id"});req.onsuccess=e=>{documentDB=e.target.result;res(documentDB);};req.onerror=()=>{documentsMemOnly=true;res(null);};}
+    catch(e){documentsMemOnly=true;res(null);}
+  });
+}
+async function putDocument(doc){const db=await openDocumentDB();if(!db){documentMem.set(doc.id,doc);return;}return new Promise(res=>{try{const tx=db.transaction("documents","readwrite");tx.objectStore("documents").put(doc);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;}catch(e){documentMem.set(doc.id,doc);res();}});}
+async function getDocumentsBy(fn){const db=await openDocumentDB();if(!db)return Array.from(documentMem.values()).filter(fn).sort((a,b)=>a.createdAt-b.createdAt);return new Promise(res=>{try{const rq=db.transaction("documents","readonly").objectStore("documents").getAll();rq.onsuccess=()=>res((rq.result||[]).filter(fn).sort((a,b)=>a.createdAt-b.createdAt));rq.onerror=()=>res([]);}catch(e){res([]);}});}
+async function findDocument(id){const docs=await getDocumentsBy(d=>d.id===id);return docs[0]||null;}
+async function deleteDocumentById(id){const db=await openDocumentDB();if(!db){documentMem.delete(id);return;}return new Promise(res=>{try{const tx=db.transaction("documents","readwrite");tx.objectStore("documents").delete(id);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;}catch(e){res();}});}
+async function deleteDocumentsWhere(fn){const docs=await getDocumentsBy(fn);for(const d of docs)await deleteDocumentById(d.id);}
+function formatBytes(bytes){const n=Number(bytes)||0;if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";return (n/1048576).toFixed(1)+" MB";}
+function documentKind(name,type){const n=String(name||"").toLowerCase();if(type==="application/pdf"||n.endsWith(".pdf"))return"PDF";if(n.endsWith(".csv"))return"CSV";return"XLS";}
+function validDocument(file){const n=String(file.name||"").toLowerCase();return /\.(pdf|xls|xlsx|csv)$/.test(n);}
+async function handleDocumentUpload(inspId,input){
+  const files=Array.from(input.files||[]);input.value="";if(!files.length)return;
+  let skipped=[];
+  for(const file of files){
+    if(!validDocument(file)){skipped.push(file.name+" (unsupported type)");continue;}
+    if(file.size>DOC_MAX_BYTES){skipped.push(file.name+" (larger than 25 MB)");continue;}
+    await putDocument({id:uid(),inspId,name:file.name||"Document",type:file.type||"application/octet-stream",size:file.size||0,blob:file,createdAt:Date.now()});
+  }
+  await loadInspectionDocuments(inspId);if(skipped.length)alert("Not added:\n"+skipped.join("\n"));
+}
+async function openInspectionDocument(id){
+  const doc=await findDocument(id);if(!doc)return;
+  try{const url=URL.createObjectURL(doc.blob);const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.download=doc.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(e){alert("This file could not be opened on this device.");}
+}
+async function removeInspectionDocument(id,inspId){if(!confirm("Remove this attached file?"))return;await deleteDocumentById(id);loadInspectionDocuments(inspId);}
+async function loadInspectionDocuments(inspId){
+  const box=document.getElementById("inspection-document-list");if(!box)return;const docs=await getDocumentsBy(d=>d.inspId===inspId);
+  box.innerHTML=docs.length?docs.map(d=>'<div class="document-item"><div class="document-icon">'+documentKind(d.name,d.type)+'</div><div class="document-main"><div class="document-name">'+esc(d.name)+'</div><div class="document-meta">'+formatBytes(d.size)+'</div></div><div class="document-actions"><button type="button" onclick=\'openInspectionDocument("'+d.id+'")\'>Open</button><button type="button" onclick=\'removeInspectionDocument("'+d.id+'","'+inspId+'")\'>Remove</button></div></div>').join(""):'<div class="section-note" style="margin:0">No manifest or supporting files attached.</div>';
+}
+async function loadReportDocuments(insp){
+  const box=document.getElementById("report-documents");if(!box)return;const docs=await getDocumentsBy(d=>d.inspId===insp.id);if(!docs.length){box.innerHTML="";return;}
+  box.innerHTML='<div class="report-docs"><h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Attached documents</h2><ul>'+docs.map(d=>'<li>'+esc(d.name)+' ('+formatBytes(d.size)+')</li>').join("")+'</ul></div>';
+}
+
+/* Rebuild Details with attachments and editable reading labels. */
+detailsBody=function(insp){
+  ensureTemperatureFieldsV10(insp);setTimeout(()=>loadInspectionDocuments(insp.id),0);
+  const opts=availableCommodities(insp).map(c=>'<option value="'+c.id+'"'+(c.id===insp.commodityId?' selected':'')+'>'+esc(c.name)+'</option>').join("");
+  const pulp=Array.from({length:3},(_,ix)=>tempInputCard(insp,"pulp",ix)).join("");
+  const ambient=Array.from({length:2},(_,ix)=>tempInputCard(insp,"ambient",ix)).join("");
+  return storageNotice()+
+  '<div class="card"><h2>Shipment details</h2>'+fieldRow("Inspection type","type",insp)+
+  '<div class="grid2">'+fieldRow("Variety","specie",insp,"text","e.g. Navel Orange")+
+  '<div class="field"><label>Commodity profile</label><select onchange=\'setCommodity("'+insp.id+'",this.value)\'>'+opts+'</select></div>'+fieldRow("Vessel / Airline","vessel",insp,"text","e.g. 3067 JAZAN V.2614N")+fieldRow("Container no.","container",insp,"text","e.g. HLBU6149803")+fieldRow("Warehouse","warehouse",insp,"text","e.g. CWPL")+fieldRow("Inspection date","date",insp,"date")+fieldRow("Manifest / reference","documentRef",insp,"text","Manifest, booking or reference no.")+'</div></div>'+ 
+  '<div class="card"><h2>Manifest / documents</h2><div class="document-upload"><div class="section-note" style="margin:0">Attach a PDF, Excel workbook, or CSV manifest. Files stay on this device and remain available offline.</div><div class="row-actions"><button class="btn btn-ghost btn-block" type="button" onclick="document.getElementById(\'inspection-doc-input\').click()">+ Import PDF or Excel file</button></div><input id="inspection-doc-input" type="file" multiple accept="'+DOC_ACCEPT+'" style="display:none" onchange=\'handleDocumentUpload("'+insp.id+'",this)\'><div class="document-list" id="inspection-document-list"></div></div></div>'+ 
+  '<div class="card"><h2>Pulp temperatures</h2><div class="temp-section-note">Tap a reading title to replace “Pulp temp 1” with a custom description. Enter °F or °C and the other value fills automatically.</div><div class="temp-readings">'+pulp+'</div></div>'+ 
+  '<div class="card"><h2>Ambient temperatures</h2><div class="temp-section-note">The reading names are editable and both units remain synchronized.</div><div class="temp-readings ambient">'+ambient+'</div></div>'+ 
+  '<div class="card"><h2>Notes</h2><div class="field"><textarea placeholder="Free observations…" oninput=\'setMeta("'+insp.id+'","notes",this.value)\'>'+esc(insp.meta.notes||"")+'</textarea></div></div>'+ 
+  '<button class="btn btn-danger btn-block no-print" onclick=\'deleteInspection("'+insp.id+'")\'>Delete inspection</button>';
+};
+
+const reportBodyBeforeV10=reportBody;
+reportBody=function(insp){
+  ensureTemperatureFieldsV10(insp);
+  let html=reportBodyBeforeV10(insp);
+  const oldFmt=arr=>arr.map((t,ix)=>{const hf=String(t.f??"").trim()!=="",hc=String(t.c??"").trim()!=="";if(!hf&&!hc)return"";return(ix+1)+": "+(hf?fmt(Number(t.f),1)+"°F":"—")+" / "+(hc?fmt(Number(t.c),1)+"°C":"—");}).filter(Boolean).join(" · ");
+  const newFmt=(arr,group)=>arr.map((t,ix)=>{const hf=String(t.f??"").trim()!=="",hc=String(t.c??"").trim()!=="";if(!hf&&!hc)return"";return esc(t.label||defaultTempLabel(group,ix))+": "+(hf?fmt(Number(t.f),1)+"°F":"—")+" / "+(hc?fmt(Number(t.c),1)+"°C":"—");}).filter(Boolean).join(" · ");
+  const oldP=oldFmt(insp.pulpTemps),oldA=oldFmt(insp.ambientTemps),newP=newFmt(insp.pulpTemps,"pulp"),newA=newFmt(insp.ambientTemps,"ambient");
+  if(oldP)html=html.replace('<div class="temps-inline"><strong>Pulp temps:</strong> '+oldP+'</div>','<div class="temps-inline"><strong>Pulp temps:</strong> '+newP+'</div>');
+  if(oldA)html=html.replace('<div class="temps-inline"><strong>Ambient temps:</strong> '+oldA+'</div>','<div class="temps-inline"><strong>Ambient temps:</strong> '+newA+'</div>');
+  html=html.replace('<div id="report-photos"></div>','<div id="report-documents"></div><div id="report-photos"></div>');
+  setTimeout(()=>loadReportDocuments(insp),0);return html;
+};
+
+/* One click always creates a truly blank row and starts at Pallet ID. */
+function makeBlankInspectionRow(){const sample={id:uid(),size:100,counts:{},measures:{}};return{id:uid(),label:"",exporter:"",variety:"",grower:"",growerNo:"",counterMark:"",package:"",packDate:"",lotNo:"",treatment:"",size:"",cases:"",samples:[sample]};}
+function focusNewRowPallet(){setTimeout(()=>{const el=document.getElementById("row-pallet-id");if(el){el.focus();el.select();el.scrollIntoView({block:"center",behavior:"smooth"});}},80);}
+addPallet=function(id){const insp=getInsp(id);if(!insp)return;const p=makeBlankInspectionRow();insp.pallets.push(p);saveStore();go({view:"inspection",id,tab:"pallets",palletId:p.id,newRow:true});};
+function addInspectionRowFromTop(id){addPallet(id);}
+duplicatePalletRow=function(id){addPallet(id);};
+addSample=function(id){addPallet(id);};
+
+palletDetail=function(insp,p,prof){
+  if(!(p.samples||[]).length)p.samples=[{id:uid(),size:100,counts:{},measures:{}}];const s=p.samples[0];setTimeout(()=>loadPalletPhotos(insp.id,p.id),0);if(route.newRow)focusNewRowPallet();
+  const pf=(label,key,type,ph,extra="")=>'<div class="field '+extra+'"><label>'+label+'</label><input '+(key==="label"?'id="row-pallet-id" ':'')+'type="'+(type||"text")+'" value="'+esc(p[key]||"")+'" placeholder="'+esc(ph||"")+'" oninput=\'setPallet("'+insp.id+'","'+p.id+'","'+key+'",this.value)\'></div>';
+  const tagOpts=PHOTO_TYPES.map(x=>'<option value="'+x[1]+'">'+x[1]+'</option>').join("");
+  return '<button class="linkbtn" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets"})\'>&#8592; All rows</button>'+ 
+  '<div class="card row-start-card"><h2>Inspection row details</h2><div class="section-note">Start with the pallet ID. This row is blank and does not inherit information from the previous entry.</div>'+pf("Pallet ID / custom row label","label","text","Scan or enter pallet ID","row-primary-field")+'<div class="grid2">'+pf("Exporter","exporter")+pf("Variety","variety")+pf("Grower / Ranch","grower")+pf("Grower no.","growerNo")+pf("Counter mark","counterMark")+pf("Package / Label","package")+pf("Pack date","packDate","date")+pf("Lot no.","lotNo")+pf("F / NF / I","treatment","text","F, NF or I")+pf("Size / count","size")+pf("Cases on row","cases","number")+'</div></div>'+ 
+  '<div class="card"><h2>Photos</h2><div class="field"><label>Next photo type</label><select id="photo-tag">'+tagOpts+'</select></div><div class="row-actions"><button class="btn btn-primary" style="flex:1.4" onclick=\'triggerPhoto("photo-cam")\'>&#128247; Take photo</button><button class="btn btn-ghost" style="flex:1" onclick=\'triggerPhoto("photo-gal")\'>Library</button></div><input type="file" id="photo-cam" accept="image/*" capture="environment" style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this,"'+s.id+'")\'><input type="file" id="photo-gal" accept="image/*" multiple style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this,"'+s.id+'")\'><div class="photo-grid" id="photo-grid"></div></div>'+ 
+  '<div class="row-flow-actions"><button class="btn btn-primary btn-block" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets",palletId:"'+p.id+'",sampleId:"'+s.id+'"})\'>Continue to inspection fields →</button></div>'+ 
+  '<button class="btn btn-danger btn-block" onclick=\'delPallet("'+insp.id+'","'+p.id+'")\'>Delete inspection row</button>';
+};
+
+const sampleBodyBeforeV10=sampleBody;
+sampleBody=function(insp,p,prof){
+  let html=sampleBodyBeforeV10(insp,p,prof);
+  html=html.replace('<button class="btn btn-ghost btn-block" onclick=\'duplicatePalletRow("'+insp.id+'","'+p.id+'")\'>+ Add another inspection row</button>','<button class="btn btn-ghost btn-block" onclick=\'addPallet("'+insp.id+'")\'>+ Add new blank inspection row</button>');
+  return html;
+};
+
+const renderInspectionBeforeV10=renderInspection;
+renderInspection=function(){
+  const insp=getInsp(route.id);if(!insp){go({view:"home"});return;}const m=insp.meta;const tab=route.tab||"details";let body="";
+  if(tab==="details")body=detailsBody(insp);if(tab==="pallets")body=palletsBody(insp);if(tab==="report")body=reportBody(insp);
+  const tabs=["details","pallets","report"].map(t=>{const target=tabTarget(insp,t);return'<button class="tab '+(t===tab?'on':'')+'" onclick=\'go('+JSON.stringify(target)+')\'>'+t+'</button>';}).join("");
+  const rowButton=tab==="pallets"?'<button class="iconbtn row-shortcut" onclick=\'addInspectionRowFromTop("'+insp.id+'")\'>+ Row</button>':'';
+  const printButton=tab==="report"?'<button class="iconbtn" onclick="window.print()">Print / PDF</button>':'';
+  const right='<span class="save-state" id="autosave-status">Saved</span>'+rowButton+printButton;
+  $app().innerHTML=topbar(m.container||m.specie||"New inspection",m.type||"Inspection",{view:"home"},right)+'<div class="screen tabbed">'+body+'</div><div class="tabs">'+tabs+'</div>';
+};
+
+/* Photo categories: Cut Samples gets seed percentage and free remarks, defects retain optional count mapping. */
+function normalizePhotoText(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"");}
+function isCutSampleLike(category,caption){const n=normalizePhotoText(category+" "+caption);return n.includes("cutsample")||n.includes("cutfruit")||n.includes("cutspecimen");}
+function inferPhotoCategory(ph){if(ph.category&&ph.category!=="general")return ph.category;const n=normalizePhotoText(ph.tag);if(isCutSampleLike("",ph.tag))return"cut-samples";if(n.includes("palletlabel"))return"pallet-label";if(n.includes("cartonmark"))return"carton-marks";if(n.includes("openappearance"))return"open-appearance";if(n.includes("packag"))return"packaging";if(n.includes("temp"))return"temperature";if(ph.defectKey)return"defect";return"general";}
+function photoTypeLabel(value){const x=PHOTO_TYPES.find(p=>p[0]===value);return x?x[1]:"General";}
+function photoTypeOptions(ph){const current=inferPhotoCategory(ph);return PHOTO_TYPES.map(x=>'<option value="'+x[0]+'"'+(current===x[0]?' selected':'')+'>'+x[1]+'</option>').join("");}
+function togglePhotoEditorSections(){
+  const type=document.getElementById("photo-edit-type"),caption=document.getElementById("photo-edit-tag");const cut=isCutSampleLike(type?type.value:"",caption?caption.value:"");const defect=!cut&&type&&type.value==="defect";
+  const cutBox=document.getElementById("photo-cut-fields"),defectBox=document.getElementById("photo-defect-fields");if(cutBox)cutBox.hidden=!cut;if(defectBox)defectBox.hidden=!defect;
+}
+function onPhotoTypeChange(){const type=document.getElementById("photo-edit-type"),caption=document.getElementById("photo-edit-tag");if(type&&caption&&(!caption.value.trim()||caption.value.trim()==="General"))caption.value=photoTypeLabel(type.value);togglePhotoEditorSections();}
+function promptOriginalPhotoToPhotos(file){
+  if(!store.promptPhotoSave||!file||!navigator.share)return;
+  try{if(navigator.canShare&&!navigator.canShare({files:[file]}))return;navigator.share({files:[file],title:"QCapp photo"}).catch(()=>{});}catch(e){}
+}
+handlePhoto=async function(inspId,palletId,input,sampleId=""){
+  const files=Array.from(input.files||[]);const camera=/cam/i.test(input.id||"");if(camera&&files[0])promptOriginalPhotoToPhotos(files[0]);input.value="";if(!files.length)return;
+  const sel=document.getElementById("photo-tag"),selected=sel?sel.value:"General";const defaultCategory=(PHOTO_TYPES.find(x=>x[1]===selected)||["general"])[0];const added=[];
+  for(const f of files){const dataUrl=await compressImage(f);if(!dataUrl)continue;const ph={id:uid(),inspId,palletId,sampleId,tag:selected||"General",category:defaultCategory,originalName:f.name||"",dataUrl,createdAt:Date.now(),defectKey:"",defectCount:"",seedPercent:"",comments:""};await putPhoto(ph);added.push(ph);}
+  loadPalletPhotos(inspId,palletId);if(sampleId)loadSamplePhotos(inspId,palletId,sampleId);if(added[0])openPhotoEditor(added[0].id,inspId,palletId,sampleId);
+};
+function photoSubline(ph){if(isCutSampleLike(inferPhotoCategory(ph),ph.tag)){const bits=[];if(ph.seedPercent!==""&&ph.seedPercent!=null)bits.push("Seed count "+ph.seedPercent+"%");if(ph.comments)bits.push(ph.comments);return bits.join(" · ");}if(ph.defectKey&&ph.defectCount!=="")return"Linked count: "+ph.defectCount;return"";}
+loadSamplePhotos=async function(inspId,palletId,sampleId){
+  const grid=document.getElementById("sample-photo-grid");if(!grid)return;const photos=await getPhotosBy(ph=>ph.palletId===palletId&&(!ph.sampleId||ph.sampleId===sampleId));
+  grid.innerHTML=photos.length?photos.map(ph=>{const sub=photoSubline(ph);return'<button class="photo-mini" type="button" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+sampleId+'")\'><img src="'+ph.dataUrl+'" alt=""><span>'+esc(ph.tag||photoTypeLabel(inferPhotoCategory(ph)))+'</span><span class="photo-type-badge">'+esc(photoTypeLabel(inferPhotoCategory(ph)))+'</span>'+(sub?'<span class="photo-link">'+esc(sub)+'</span>':'')+'</button>';}).join(""):'<div class="section-note" style="grid-column:1/-1;margin:0">No photos yet.</div>';
+};
+loadPalletPhotos=async function(inspId,palletId){
+  const grid=document.getElementById("photo-grid");if(!grid)return;const photos=await getPhotosBy(ph=>ph.palletId===palletId);
+  grid.innerHTML=photos.length?photos.map(ph=>'<div class="photo-cell"><img src="'+ph.dataUrl+'" alt="'+esc(ph.tag)+'" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+esc(ph.sampleId||"")+'")\'><button class="photo-del" onclick=\'removePhoto("'+ph.id+'","'+inspId+'","'+palletId+'")\'>&times;</button><div class="photo-tag">'+esc(ph.tag||photoTypeLabel(inferPhotoCategory(ph)))+'<div class="photo-type-badge">'+esc(photoTypeLabel(inferPhotoCategory(ph)))+'</div></div><div class="photo-tools"><button class="photo-tool" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+esc(ph.sampleId||"")+'")\'>Review</button><button class="photo-tool" onclick=\'savePhotoToDevice("'+ph.id+'")\'>Save to Photos</button></div></div>').join(""):'<div class="section-note" style="grid-column:1/-1">No photos yet.</div>';
+};
+openPhotoEditor=async function(id,inspId,palletId,sampleId=""){
+  const ph=await findPhoto(id);if(!ph)return;const insp=getInsp(inspId);if(!insp)return;const prof=commodityOf(insp);const defectOpts='<option value="">Choose field</option>'+prof.defects.filter(d=>!d.measure).map(d=>'<option value="'+esc(d.key)+'"'+(ph.defectKey===d.key?' selected':'')+'>'+esc(d.name)+'</option>').join("");
+  const cut=isCutSampleLike(inferPhotoCategory(ph),ph.tag),defect=!cut&&inferPhotoCategory(ph)==="defect";const modal=document.createElement("div");modal.id="photo-editor-modal";modal.className="photo-modal";
+  modal.innerHTML='<div class="photo-editor"><div class="photo-editor-head"><strong>Review photo</strong><button class="photo-editor-close" onclick="closePhotoEditor()">&times;</button></div><img src="'+ph.dataUrl+'" alt=""><div class="field"><label>Photo type</label><select id="photo-edit-type" onchange="onPhotoTypeChange()">'+photoTypeOptions(ph)+'</select></div><div class="field"><label>Photo name / caption</label><input id="photo-edit-tag" type="text" value="'+esc(ph.tag||photoTypeLabel(inferPhotoCategory(ph)))+'" oninput="togglePhotoEditorSections()"></div>'+ 
+  '<div class="photo-extra" id="photo-cut-fields" '+(cut?'':'hidden')+'><div class="field photo-seed"><label>Seed count (%)</label><input id="photo-edit-seed" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="'+esc(ph.seedPercent??"")+'" placeholder="0–100"></div><div class="field"><label>Cut sample remarks</label><textarea class="photo-comments" id="photo-edit-comments" placeholder="Glassy, creamy, taste, internal condition…">'+esc(ph.comments||"")+'</textarea></div></div>'+ 
+  '<div class="photo-extra" id="photo-defect-fields" '+(defect?'':'hidden')+'><div class="field"><label>Linked inspection field</label><select id="photo-edit-defect">'+defectOpts+'</select></div><div class="field"><label>Number affected</label><input id="photo-edit-count" type="number" inputmode="numeric" min="0" value="'+esc(ph.defectCount??"")+'" placeholder="Enter count"></div></div>'+ 
+  '<div class="row-actions"><button class="btn btn-ghost" style="flex:1" onclick=\'savePhotoToDevice("'+id+'")\'>Save to Photos</button><button class="btn btn-primary" style="flex:1.4" onclick=\'savePhotoEditor("'+id+'","'+inspId+'","'+palletId+'","'+(sampleId||ph.sampleId||"")+'")\'>Save photo</button></div></div>';
+  modal.addEventListener("click",e=>{if(e.target===modal)closePhotoEditor();});document.body.appendChild(modal);togglePhotoEditorSections();
+};
+savePhotoEditor=async function(id,inspId,palletId,sampleId){
+  const ph=await findPhoto(id);if(!ph)return;const type=document.getElementById("photo-edit-type"),tag=document.getElementById("photo-edit-tag");ph.category=type?type.value:inferPhotoCategory(ph);ph.tag=(tag&&tag.value.trim())||photoTypeLabel(ph.category);ph.sampleId=sampleId||ph.sampleId||"";
+  const cut=isCutSampleLike(ph.category,ph.tag);if(cut){const seed=document.getElementById("photo-edit-seed"),comments=document.getElementById("photo-edit-comments");let v=seed?Number(seed.value):NaN;ph.seedPercent=Number.isFinite(v)?String(Math.min(100,Math.max(0,v))):"";ph.comments=comments?comments.value.trim():"";ph.defectKey="";ph.defectCount="";}
+  else if(ph.category==="defect"){const defect=document.getElementById("photo-edit-defect"),count=document.getElementById("photo-edit-count");ph.defectKey=defect?defect.value:"";ph.defectCount=count?count.value:"";ph.seedPercent="";ph.comments="";if(ph.defectKey&&ph.sampleId&&ph.defectCount!==""){const found=findSample(inspId,palletId,ph.sampleId);if(found&&found.s){found.s.counts=found.s.counts||{};found.s.counts[ph.defectKey]=clampCount(found.s,ph.defectCount);applyIncludedRelationship(found.s,found.prof,ph.defectKey);saveStore();}}}
+  else{ph.defectKey="";ph.defectCount="";ph.seedPercent="";ph.comments="";}
+  await putPhoto(ph);closePhotoEditor();loadPalletPhotos(inspId,palletId);if(ph.sampleId)loadSamplePhotos(inspId,palletId,ph.sampleId);const found=ph.sampleId?findSample(inspId,palletId,ph.sampleId):null;if(found&&found.s)refreshSampleLive(found.insp,found.p,found.s,found.prof);
+};
+loadReportPhotos=async function(insp){
+  const box=document.getElementById("report-photos");if(!box)return;const photos=await getPhotosBy(ph=>ph.inspId===insp.id);if(!photos.length){box.innerHTML="";return;}
+  const labelOf=pid=>{const ix=(insp.pallets||[]).findIndex(p=>p.id===pid);const p=(insp.pallets||[])[ix];return p?(p.label||("Row "+(ix+1))):"Inspection row";};const order=new Map((insp.pallets||[]).map((p,ix)=>[p.id,ix]));photos.sort((a,b)=>(order.get(a.palletId)??99)-(order.get(b.palletId)??99)||a.createdAt-b.createdAt);
+  const pages=[];for(let i=0;i<photos.length;i+=4)pages.push('<div class="photo-print-page">'+photos.slice(i,i+4).map(ph=>{const sub=photoSubline(ph);return'<figure><img src="'+ph.dataUrl+'" alt=""><figcaption>'+esc(labelOf(ph.palletId))+': '+esc(ph.tag||photoTypeLabel(inferPhotoCategory(ph)))+(sub?'<br><span>'+esc(sub)+'</span>':'')+'</figcaption></figure>';}).join("")+'</div>');
+  box.innerHTML='<h2 style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:18px">Pictures</h2><div class="rphotos">'+pages.join("")+'</div>';
+};
+
+/* Setting controls the closest iPhone web apps can get to automatic Camera Roll saving: immediately show the native share sheet after capture. */
+function setPhotoSavePrompt(checked){store.promptPhotoSave=!!checked;saveStore();}
+const renderSettingsBeforeV10=renderSettings;
+renderSettings=function(){renderSettingsBeforeV10();if(route.commodityId)return;const screen=document.querySelector(".screen");if(!screen)return;const card=document.createElement("div");card.className="card";card.innerHTML='<h2>Camera photo saving</h2><label class="settings-toggle"><input type="checkbox" '+(store.promptPhotoSave?'checked':'')+' onchange="setPhotoSavePrompt(this.checked)"><div><strong>Prompt to save after each camera capture</strong><span>QCapp immediately opens the iPhone share sheet with the original photo. iOS still requires you to choose Save Image; a website cannot silently write to the Camera Roll.</span></div></label>';screen.appendChild(card);};
+
+const deleteInspectionBeforeV10=deleteInspection;
+deleteInspection=function(id){if(!confirm("Delete this inspection, its attached documents, and its photos? This cannot be undone."))return;store.inspections=store.inspections.filter(i=>i.id!==id);saveStore();deletePhotosWhere(p=>p.inspId===id);deleteDocumentsWhere(d=>d.inspId===id);go({view:"home"});};
+
+
 window.addEventListener("pagehide",flushCurrentInput);
 window.addEventListener("beforeunload",flushCurrentInput);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushCurrentInput();});
 migrateWorkflowV9();
+migrateWorkflowV10();
 render();
 </script>
 </body>

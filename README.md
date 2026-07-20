@@ -1,46 +1,38 @@
-# QCapp — GitHub Pages PWA
+# QCapp v10 — GitHub Pages PWA
 
-This update keeps the existing offline-first inspection prototype and adds:
+This update is ready to upload to the existing `proto-qc` repository.
 
-- One vertical inspection-count list for every commodity profile
-- Citrus fields: Oleo, Scars, Skin Breakdown, Serious Skin Breakdown, Decay, Soft (Mushy), and Soft (Puffy)
-- Serious Skin Breakdown is included inside the Skin Breakdown count and is not double-counted in totals
-- Avocado fields: Scars, Misshapen, Other, Green, Turning, Brown, Soft, Shrivel, Mold, and Decay
+## New in v10
 
-- Editable center-number inputs between the − / + buttons
-- Citrus, Avocado, Kiwi, Stone Fruit, and Banana profiles
-- One editable **Score** input for each field in profile settings
-- More pallet metadata: grower number, counter mark, package/label, pack date, lot number, and F/NF/I
-- Photo renaming after capture
-- Multi-select from the photo library
-- A per-photo **Save to Photos** share/download action
-- QCapp name and home-screen icon
+- Replace Document ID with a **Manifest / reference** field.
+- Attach PDF, XLS, XLSX, or CSV files to an inspection for offline access.
+- Rename each pulp and ambient temperature reading while retaining live Fahrenheit/Celsius conversion.
+- Categorize photos during review.
+- Cut Sample photos receive **Seed count (%)** and freeform internal-condition remarks.
+- Defect photos retain optional field/count mapping; unrelated photo types do not show those controls.
+- The camera workflow can immediately open the iPhone share sheet with the original file. iOS still requires the user to choose **Save Image**.
+- **+ Row** shortcut appears in the Pallets area. Every new row is blank, opens at the top of Row Details, and focuses the Pallet ID field.
+- New rows no longer copy labels or metadata from the prior row.
+- Existing autosave, return-to-last-row, PDF photo pagination, templates, photos, and inspection data are preserved.
 
-## Update the existing GitHub Pages site
+## Deploy
 
-Upload the changed files to the repository root and replace the existing versions:
+Upload everything in this folder to the root of the GitHub repository and replace the matching files. GitHub Pages will redeploy automatically.
 
-- `index.html`
-- `manifest.webmanifest`
-- `sw.js`
-- the four files in `icons/`
-- optionally `README.md` and `DEPLOYMENT-CHECKLIST.txt`
+Current site:
 
-Commit the changes. GitHub Pages will redeploy automatically. Installed phones may need to fully close and reopen QCapp once or twice for the new service-worker cache to take control.
+```text
+https://apdelany1.github.io/proto-qc/
+```
 
-## iPhone photo limitation
+After deployment, test with:
 
-A browser/PWA cannot silently write a camera capture into the iPhone Photos library. QCapp provides **Save to Photos** on each photo, which opens the iOS share sheet when supported. Choose **Save Image**. For a guaranteed Camera Roll copy from the beginning, take pictures in the iPhone Camera app and then use QCapp’s multi-select Gallery button.
+```text
+https://apdelany1.github.io/proto-qc/?v=10
+```
 
-## Data
+Completely close and reopen an installed iPhone home-screen copy after GitHub finishes deploying.
 
-Inspections remain in browser `localStorage`; photos remain in IndexedDB on that phone. Hosting does not synchronize devices. The JSON backup does not include photos.
+## Local-only data
 
-
-Version 7 adds three pulp temperature readings and two ambient temperature readings. Each reading accepts Fahrenheit or Celsius and automatically converts the other unit.
-
-Version 8 fixes photo pagination in printed/PDF reports. The photo section starts on a fresh page, prints up to four complete photos per page in a 2x2 layout, and uses contain sizing so portrait and landscape images are never cropped or split across pages.
-
-## v9 workflow safeguards
-
-Autosave-before-navigation, return-to-last-row, in-row photo review and defect linking, one-row-per-sample behavior, generic custom profiles, and access-code reveal for prebuilt templates.
+Inspection records remain in browser storage. Photos and attached manifest files remain in IndexedDB on that device. They are not uploaded to GitHub or synchronized to another phone. The existing JSON backup does not include photos or attached documents.

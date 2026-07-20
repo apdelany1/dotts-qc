@@ -1,20 +1,15 @@
-QCAPP UPDATE CHECKLIST
+QCAPP V10 DEPLOYMENT CHECKLIST
 
-1. Open the existing dotts-qc GitHub repository.
-2. Add file -> Upload files.
-3. Upload the CONTENTS of this folder and replace matching files.
-4. Commit message: Update single-column commodity fields
-5. Wait for GitHub Pages deployment.
-6. Open the published link in Safari and confirm the title says QCapp.
-7. Fully close/reopen the installed app to refresh the service-worker cache.
-8. Test: Citrus single-column counts, serious skin breakdown inclusion, Avocado fields, direct number entry, photos, and all five commodity profiles.
-9. Continue parallel testing; do not rely on automatic grades until numeric tolerance rules are approved.
-
-
-Version 7 adds three pulp temperature readings and two ambient temperature readings. Each reading accepts Fahrenheit or Celsius and automatically converts the other unit.
-
-V8 PDF PHOTO CHECK
-- Generate a report with at least 5 photos.
-- Print / Save as PDF.
-- Confirm the Pictures section starts on a new page.
-- Confirm no photo is divided between two pages.
+1. Open the GitHub repository for https://apdelany1.github.io/proto-qc/
+2. Choose Add file > Upload files.
+3. Upload everything inside this folder and replace matching files.
+4. Commit with: Add manifest, photo, temperature, and row workflow upgrades
+5. Wait for GitHub Pages to deploy.
+6. Test: https://apdelany1.github.io/proto-qc/?v=10
+7. Completely close and reopen the iPhone home-screen app.
+8. Verify:
+   - Manifest PDF/Excel attachment opens offline after first import.
+   - Temperature labels can be renamed and °F/°C remain synchronized.
+   - Cut Samples shows seed percentage and remarks, not linked-count fields.
+   - + Row opens a blank Row Details screen focused on Pallet ID.
+   - Existing inspections and photos remain present.
