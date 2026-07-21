@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "qcapp-shell-v10-field-workflow";
+const CACHE_NAME = "qcapp-shell-v11-unified-row";
 const APP_SHELL = [
   "./",
   "./index.html",

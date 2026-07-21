@@ -629,6 +629,35 @@ table.rt td,table.rt th{padding:10px}
   .rphotos figcaption{margin-top:2mm;font-size:9pt;line-height:1.25;break-inside:avoid}
 }
 
+
+/* ---------- v11 unified row workflow ---------- */
+.temp-title-line,.field-title-line{display:flex;align-items:center;gap:8px;min-width:0}
+.temp-title-line{margin-bottom:10px}
+.temp-title-text{flex:1;font-size:14px;font-weight:800;color:var(--ink);line-height:1.3;overflow-wrap:anywhere}
+.rename-mini{width:34px;height:34px;flex:none;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--accent-dark);font-size:15px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-sm)}
+.rename-mini:active{transform:scale(.94)}
+.field-title-line{align-items:flex-start}
+.field-title-line .field-title-text{flex:1;min-width:0;line-height:1.25;overflow-wrap:anywhere}
+.field-title-line .rename-mini{width:30px;height:30px;border-radius:10px;font-size:13px;margin-top:-5px}
+.unified-row-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.unified-row-intro strong{display:block;font-size:18px;letter-spacing:-.015em}
+.unified-row-intro span{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.45}
+.row-details-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.row-details-grid .row-primary-field{grid-column:1/-1}
+.row-stage{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:900;color:var(--accent-dark);margin:4px 0 10px}
+.row-stage:before{content:"";width:4px;height:16px;border-radius:999px;background:linear-gradient(180deg,var(--accent),#7357FF)}
+.row-group-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;color:#65758D;margin:22px 5px 9px}
+.rename-modal{position:fixed;inset:0;z-index:120;background:rgba(6,14,28,.72);display:flex;align-items:flex-end;justify-content:center;padding:18px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.rename-sheet{width:min(100%,520px);background:#fff;border-radius:24px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.32)}
+.rename-sheet h3{margin:0 0 4px;font-size:19px;letter-spacing:-.02em}
+.rename-sheet .rename-default{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.45}
+.rename-sheet input{width:100%;padding:14px;border:1px solid var(--line);border-radius:14px;font:inherit;font-size:16px;color:var(--ink)}
+.rename-sheet input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(46,91,255,.14)}
+.rename-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.rename-sheet-actions .save{grid-column:1/-1}
+.evidence-card .field{margin-bottom:10px}
+@media(max-width:520px){.row-details-grid{grid-template-columns:1fr}.row-details-grid .row-primary-field{grid-column:auto}.unified-row-intro{display:block}.unified-row-intro .pill{margin-top:10px}}
+
 </style>
 </head>
 <body>
@@ -885,7 +914,7 @@ function computeInspection(insp){
     if(d.measure) return;
     const pct = totalFruit>0 ? (aggAll[d.key]||0)/totalFruit*100 : 0;
     if(pct>0){
-      const item={name:d.name, pct, grade:gradeValue(pct,d.tol,d.higherIsBetter)};
+      const item={key:d.key,name:(typeof inspectionFieldLabel==="function"?inspectionFieldLabel(insp,d):d.name), pct, grade:gradeValue(pct,d.tol,d.higherIsBetter)};
       rank[d.type].push(item);
     }
     if(!d.excludeFromTotal){
@@ -1706,7 +1735,7 @@ window.addEventListener("popstate", e=>{
 });
 
 /* ---------------- v9 workflow overrides ---------------- */
-const QCAPP_VERSION="10.0";
+const QCAPP_VERSION="11.0";
 const PREBUILT_IDS=new Set(["citrus","avocado","kiwi","stone-fruit","banana"]);
 function makeGenericProfile(id="custom-default",name="Custom Template"){
   return {id,name,builtIn:false,sumTol:{quality:{good:0,fair:5,poor:10},condition:{good:0,fair:5,poor:10}},defects:[
@@ -1866,7 +1895,7 @@ loadPalletPhotos=async function(inspId,palletId){
 function closePhotoEditor(){const el=document.getElementById("photo-editor-modal");if(el)el.remove();}
 async function openPhotoEditor(id,inspId,palletId,sampleId=""){
   const ph=await findPhoto(id);if(!ph)return;const insp=getInsp(inspId);if(!insp)return;const prof=commodityOf(insp);
-  const opts='<option value="">Not linked to a count</option>'+prof.defects.filter(d=>!d.measure).map(d=>'<option value="'+esc(d.key)+'"'+(ph.defectKey===d.key?' selected':'')+'>'+esc(d.name)+'</option>').join("");
+  const opts='<option value="">Not linked to a count</option>'+prof.defects.filter(d=>!d.measure).map(d=>'<option value="'+esc(d.key)+'"'+(ph.defectKey===d.key?' selected':'')+'>'+esc(inspectionFieldLabel(insp,d))+'</option>').join("");
   const modal=document.createElement("div");modal.id="photo-editor-modal";modal.className="photo-modal";modal.innerHTML='<div class="photo-editor"><div class="photo-editor-head"><strong>Review photo</strong><button class="photo-editor-close" onclick="closePhotoEditor()">&times;</button></div><img src="'+ph.dataUrl+'" alt=""><div class="field"><label>Photo name / caption</label><input id="photo-edit-tag" type="text" value="'+esc(ph.tag||"General")+'"></div><div class="field"><label>Link to inspection field</label><select id="photo-edit-defect">'+opts+'</select></div><div class="field"><label>Number affected</label><input id="photo-edit-count" type="number" inputmode="numeric" min="0" value="'+esc(ph.defectCount??"")+'" placeholder="Enter count"></div><div class="section-note">Saving a linked number writes it into the matching field on this inspection row. It can still be edited directly afterward.</div><div class="row-actions"><button class="btn btn-ghost" style="flex:1" onclick=\'savePhotoToDevice("'+id+'")\'>Save to Photos</button><button class="btn btn-primary" style="flex:1.4" onclick=\'savePhotoEditor("'+id+'","'+inspId+'","'+palletId+'","'+(sampleId||ph.sampleId||"")+'")\'>Save photo</button></div></div>';
   modal.addEventListener("click",e=>{if(e.target===modal)closePhotoEditor();});document.body.appendChild(modal);
 }
@@ -2067,7 +2096,7 @@ loadPalletPhotos=async function(inspId,palletId){
   grid.innerHTML=photos.length?photos.map(ph=>'<div class="photo-cell"><img src="'+ph.dataUrl+'" alt="'+esc(ph.tag)+'" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+esc(ph.sampleId||"")+'")\'><button class="photo-del" onclick=\'removePhoto("'+ph.id+'","'+inspId+'","'+palletId+'")\'>&times;</button><div class="photo-tag">'+esc(ph.tag||photoTypeLabel(inferPhotoCategory(ph)))+'<div class="photo-type-badge">'+esc(photoTypeLabel(inferPhotoCategory(ph)))+'</div></div><div class="photo-tools"><button class="photo-tool" onclick=\'openPhotoEditor("'+ph.id+'","'+inspId+'","'+palletId+'","'+esc(ph.sampleId||"")+'")\'>Review</button><button class="photo-tool" onclick=\'savePhotoToDevice("'+ph.id+'")\'>Save to Photos</button></div></div>').join(""):'<div class="section-note" style="grid-column:1/-1">No photos yet.</div>';
 };
 openPhotoEditor=async function(id,inspId,palletId,sampleId=""){
-  const ph=await findPhoto(id);if(!ph)return;const insp=getInsp(inspId);if(!insp)return;const prof=commodityOf(insp);const defectOpts='<option value="">Choose field</option>'+prof.defects.filter(d=>!d.measure).map(d=>'<option value="'+esc(d.key)+'"'+(ph.defectKey===d.key?' selected':'')+'>'+esc(d.name)+'</option>').join("");
+  const ph=await findPhoto(id);if(!ph)return;const insp=getInsp(inspId);if(!insp)return;const prof=commodityOf(insp);const defectOpts='<option value="">Choose field</option>'+prof.defects.filter(d=>!d.measure).map(d=>'<option value="'+esc(d.key)+'"'+(ph.defectKey===d.key?' selected':'')+'>'+esc(inspectionFieldLabel(insp,d))+'</option>').join("");
   const cut=isCutSampleLike(inferPhotoCategory(ph),ph.tag),defect=!cut&&inferPhotoCategory(ph)==="defect";const modal=document.createElement("div");modal.id="photo-editor-modal";modal.className="photo-modal";
   modal.innerHTML='<div class="photo-editor"><div class="photo-editor-head"><strong>Review photo</strong><button class="photo-editor-close" onclick="closePhotoEditor()">&times;</button></div><img src="'+ph.dataUrl+'" alt=""><div class="field"><label>Photo type</label><select id="photo-edit-type" onchange="onPhotoTypeChange()">'+photoTypeOptions(ph)+'</select></div><div class="field"><label>Photo name / caption</label><input id="photo-edit-tag" type="text" value="'+esc(ph.tag||photoTypeLabel(inferPhotoCategory(ph)))+'" oninput="togglePhotoEditorSections()"></div>'+ 
   '<div class="photo-extra" id="photo-cut-fields" '+(cut?'':'hidden')+'><div class="field photo-seed"><label>Seed count (%)</label><input id="photo-edit-seed" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="'+esc(ph.seedPercent??"")+'" placeholder="0–100"></div><div class="field"><label>Cut sample remarks</label><textarea class="photo-comments" id="photo-edit-comments" placeholder="Glassy, creamy, taste, internal condition…">'+esc(ph.comments||"")+'</textarea></div></div>'+ 
@@ -2098,11 +2127,106 @@ const deleteInspectionBeforeV10=deleteInspection;
 deleteInspection=function(id){if(!confirm("Delete this inspection, its attached documents, and its photos? This cannot be undone."))return;store.inspections=store.inspections.filter(i=>i.id!==id);saveStore();deletePhotosWhere(p=>p.inspId===id);deleteDocumentsWhere(d=>d.inspId===id);go({view:"home"});};
 
 
+
+
+/* ---------------- v11 unified row and editable labels ---------------- */
+const QCAPP_VERSION_V11="11.0";
+function migrateWorkflowV11(){
+  store.inspections.forEach(insp=>{
+    if(!insp.fieldLabels||typeof insp.fieldLabels!=="object"||Array.isArray(insp.fieldLabels))insp.fieldLabels={};
+    ensureTemperatureFieldsV10(insp);
+  });
+  store.schemaVersion=Math.max(Number(store.schemaVersion)||0,7);saveStore();
+}
+function inspectionFieldLabel(insp,d){
+  const custom=insp&&insp.fieldLabels?String(insp.fieldLabels[d.key]||"").trim():"";
+  return custom||d.name;
+}
+function ensureRowSample(p){
+  if(!(p.samples||[]).length)p.samples=[{id:uid(),size:100,counts:{},measures:{}}];
+  return p.samples[0];
+}
+function rememberRowScroll(){
+  if(!route||route.view!=="inspection"||route.tab!=="pallets"||!route.id||!route.palletId)return;
+  const insp=getInsp(route.id);if(!insp)return;insp.ui=insp.ui||{};insp.ui.rowScroll=insp.ui.rowScroll||{};insp.ui.rowScroll[route.palletId]=Math.max(0,window.scrollY||0);
+}
+function desiredRowScroll(r){
+  if(!r||r.view!=="inspection"||r.tab!=="pallets"||!r.palletId||r.newRow)return 0;
+  const insp=getInsp(r.id);return Math.max(0,Number(insp&&insp.ui&&insp.ui.rowScroll&&insp.ui.rowScroll[r.palletId])||0);
+}
+go=function(r){
+  flushCurrentInput();rememberRowScroll();rememberInspectionRoute(route);rememberInspectionRoute(r);route=r;
+  try{history.pushState(r,"");}catch(e){}
+  render();const y=desiredRowScroll(r);setTimeout(()=>window.scrollTo(0,y),0);
+};
+function rerenderAtCurrentScroll(){
+  flushCurrentInput();rememberRowScroll();const y=window.scrollY||0;render();setTimeout(()=>window.scrollTo(0,y),0);
+}
+function closeRenameDialog(){const el=document.getElementById("rename-modal");if(el)el.remove();}
+function renameDialog(title,current,defaultValue,onSave,onReset){
+  flushCurrentInput();closeRenameDialog();const modal=document.createElement("div");modal.id="rename-modal";modal.className="rename-modal";
+  modal.innerHTML='<div class="rename-sheet"><h3>'+esc(title)+'</h3><div class="rename-default">Default: '+esc(defaultValue)+'</div><input id="rename-value" type="text" value="'+esc(current)+'" autocomplete="off"><div class="rename-sheet-actions"><button class="btn btn-ghost" type="button" id="rename-cancel">Cancel</button><button class="btn btn-ghost" type="button" id="rename-reset">Reset default</button><button class="btn btn-primary save" type="button" id="rename-save">Save name</button></div></div>';
+  modal.addEventListener("click",e=>{if(e.target===modal)closeRenameDialog();});document.body.appendChild(modal);
+  document.getElementById("rename-cancel").onclick=closeRenameDialog;document.getElementById("rename-reset").onclick=()=>{onReset();closeRenameDialog();rerenderAtCurrentScroll();};document.getElementById("rename-save").onclick=()=>{onSave(document.getElementById("rename-value").value);closeRenameDialog();rerenderAtCurrentScroll();};
+  const input=document.getElementById("rename-value");input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();document.getElementById("rename-save").click();}if(e.key==="Escape")closeRenameDialog();});setTimeout(()=>{input.focus();input.select();},60);
+}
+function openTemperatureRename(inspId,group,ix){
+  const insp=getInsp(inspId);if(!insp)return;ensureTemperatureFieldsV10(insp);const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;const def=defaultTempLabel(group,ix);const current=arr[ix].label||def;
+  renameDialog("Rename temperature reading",current,def,val=>{arr[ix].label=String(val||"").trim()||def;saveStore();},()=>{arr[ix].label=def;saveStore();});
+}
+function openInspectionFieldRename(inspId,key){
+  const insp=getInsp(inspId);if(!insp)return;const prof=commodityOf(insp);const d=prof.defects.find(x=>x.key===key);if(!d)return;insp.fieldLabels=insp.fieldLabels||{};
+  renameDialog("Rename inspection field",inspectionFieldLabel(insp,d),d.name,val=>{const next=String(val||"").trim();if(next&&next!==d.name)insp.fieldLabels[key]=next;else delete insp.fieldLabels[key];saveStore();},()=>{delete insp.fieldLabels[key];saveStore();});
+}
+setTemperatureLabel=function(id,group,ix,val){const insp=getInsp(id);if(!insp)return;ensureTemperatureFieldsV10(insp);const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;arr[ix].label=String(val||"").trim()||defaultTempLabel(group,ix);saveStore();};
+tempInputCard=function(insp,group,ix){
+  ensureTemperatureFieldsV10(insp);const arr=group==="pulp"?insp.pulpTemps:insp.ambientTemps;const pair=arr[ix];const base="temp-"+group+"-"+ix;const label=pair.label||defaultTempLabel(group,ix);
+  return '<div class="temp-reading-card"><div class="temp-title-line"><div class="temp-title-text">'+esc(label)+'</div><button class="rename-mini" type="button" aria-label="Rename '+esc(label)+'" onclick=\'openTemperatureRename("'+insp.id+'","'+group+'",'+ix+')\'>&#9998;</button></div>'+ 
+    '<div class="temp-unit-row"><label for="'+base+'-f">°F</label><input id="'+base+'-f" type="number" inputmode="decimal" step="0.1" value="'+esc(pair.f)+'" placeholder="70.0" oninput=\'setTemperature("'+insp.id+'","'+group+'",'+ix+',"f",this.value)\'></div>'+ 
+    '<div class="temp-unit-row"><label for="'+base+'-c">°C</label><input id="'+base+'-c" type="number" inputmode="decimal" step="0.1" value="'+esc(pair.c)+'" placeholder="21.1" oninput=\'setTemperature("'+insp.id+'","'+group+'",'+ix+',"c",this.value)\'></div></div>';
+};
+
+/* Every row now opens as one continuous form: identity, photos, sample size, then counts. */
+addPallet=function(id){
+  const insp=getInsp(id);if(!insp)return;const p=makeBlankInspectionRow();const s=ensureRowSample(p);insp.pallets.push(p);saveStore();go({view:"inspection",id,tab:"pallets",palletId:p.id,sampleId:s.id,newRow:true});
+};
+palletDetail=function(insp,p,prof){const s=ensureRowSample(p);route.sampleId=s.id;return sampleBody(insp,p,prof);};
+palletsBody=function(insp){
+  const prof=commodityOf(insp);
+  if(route.palletId){const p=insp.pallets.find(x=>x.id===route.palletId);if(p){const s=ensureRowSample(p);route.sampleId=route.sampleId||s.id;return sampleBody(insp,p,prof);}}
+  const items=(insp.pallets||[]).map((p,ix)=>{const c=computePallet(p,prof),s=ensureRowSample(p);const target={view:"inspection",id:insp.id,tab:"pallets",palletId:p.id,sampleId:s.id};return'<div class="pallet-item" onclick=\'go('+JSON.stringify(target)+')\'><div class="num">'+(ix+1)+'</div><div class="insp-main"><div class="l1">'+esc(p.label||("Untitled row "+(ix+1)))+(p.exporter?' · '+esc(p.exporter):'')+'</div><div class="stat-strip"><span>'+esc(p.variety||"No variety")+'</span><span>'+esc(p.cases||0)+' cases</span><span>Q '+fmt(c.avgQ)+'%</span><span>C '+fmt(c.avgC)+'%</span></div></div>'+pill(c.grade)+'</div>';}).join("");
+  return(items||'<div class="empty"><div class="big">&#127818;</div>No inspection rows yet.<br>Add the first row to begin.</div>')+'<div class="fab-bar raised"><div class="inner"><button class="btn btn-primary btn-block" onclick=\'addPallet("'+insp.id+'")\'>+ Add inspection row</button></div></div>';
+};
+function rowDetailsHtml(insp,p){
+  const pf=(label,key,type="text",ph="",extra="")=>'<div class="field '+extra+'"><label>'+label+'</label><input '+(key==="label"?'id="row-pallet-id" ':'')+'type="'+type+'" value="'+esc(p[key]||"")+'" placeholder="'+esc(ph)+'" oninput=\'setPallet("'+insp.id+'","'+p.id+'","'+key+'",this.value)\'></div>';
+  return '<div class="card row-start-card"><div class="unified-row-intro"><div><div class="row-stage">Inspection row</div><strong>Row details and inspection entry</strong><span>Start with the pallet ID, then continue down this same page into photos and counts.</span></div></div><div class="row-details-grid">'+pf("Pallet ID / custom row label","label","text","Scan or enter pallet ID","row-primary-field")+pf("Exporter","exporter")+pf("Variety","variety")+pf("Grower / Ranch","grower")+pf("Grower no.","growerNo")+pf("Counter mark","counterMark")+pf("Package / Label","package")+pf("Pack date","packDate","date")+pf("Lot no.","lotNo")+pf("F / NF / I","treatment","text","F, NF or I")+pf("Size / count","size")+pf("Cases on row","cases","number")+'</div></div>';
+}
+function defectRowsV11(insp,p,s,prof,cs){
+  let lastType="";return prof.defects.map(d=>{const label=inspectionFieldLabel(insp,d);const nested=d.includedIn?" nested-defect":"";const parent=d.includedIn?prof.defects.find(x=>x.key===d.includedIn):null;const parentLabel=parent?inspectionFieldLabel(insp,parent):"";const includedNote=parent?'<div class="included-note">Included in '+esc(parentLabel)+'</div>':'';let heading="";if(d.type!==lastType){lastType=d.type;heading='<div class="row-group-label">'+(d.type==="condition"?'Condition':'Quality')+'</div>';}
+    const title='<div class="field-title-line"><span class="field-title-text" id="field-title-'+esc(d.key)+'">'+esc(label)+'</span><button class="rename-mini" type="button" aria-label="Rename '+esc(label)+'" onclick=\'openInspectionFieldRename("'+insp.id+'","'+d.key+'")\'>&#9998;</button></div>'+includedNote;
+    if(d.measure){const v=s.measures&&s.measures[d.key];return heading+'<div class="defect-row'+nested+'" id="dr-'+d.key+'"><div class="name">'+title+'</div><div class="pct" id="pct-'+d.key+'"></div><div class="stepper"><input type="number" step="0.1" inputmode="decimal" value="'+esc(v==null?'':v)+'" onfocus="this.select()" oninput=\'setMeasure("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\'></div></div>';}
+    const cnt=Number(s.counts&&s.counts[d.key])||0,pct=cs.perDefect[d.key].pct,parentMax=parent?Math.max(Number(s.counts&&s.counts[parent.key])||0,cnt):Math.max(Number(s.size)||100,100);
+    return heading+'<div class="defect-row'+nested+'" id="dr-'+d.key+'"><div class="name">'+title+'</div><div class="pct" id="pct-'+d.key+'">'+fmt(pct)+'%</div><div class="stepper"><button type="button" onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",-1)\'>&minus;</button><input class="count-input" id="val-'+d.key+'" type="number" inputmode="numeric" min="0" max="'+parentMax+'" step="1" value="'+cnt+'" onfocus="this.select()" aria-label="'+esc(label)+' count" oninput=\'setCount("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",this.value)\'><button type="button" onclick=\'bump("'+insp.id+'","'+p.id+'","'+s.id+'","'+d.key+'",1)\'>+</button></div></div>';
+  }).join("");
+}
+sampleBody=function(insp,p,prof){
+  const s=(p.samples||[]).find(x=>x.id===route.sampleId)||ensureRowSample(p);route.sampleId=s.id;const cs=computeSample(s,prof);setTimeout(()=>loadSamplePhotos(insp.id,p.id,s.id),0);if(route.newRow)focusNewRowPallet();
+  const tagOpts=PHOTO_TYPES.map(x=>'<option value="'+x[1]+'">'+x[1]+'</option>').join("");const rows=defectRowsV11(insp,p,s,prof,cs);
+  return '<div class="row-actions"><button class="linkbtn" style="flex:1;text-align:left" onclick=\'go({view:"inspection",id:"'+insp.id+'",tab:"pallets"})\'>&#8592; All rows</button><button class="linkbtn" onclick=\'addPallet("'+insp.id+'")\'>+ New row</button></div>'+ 
+    '<div class="resume-note">This entire row is one page. Everything saves while you type, including renamed labels.</div>'+rowDetailsHtml(insp,p)+
+    '<div class="samplebar"><div class="sums" id="sample-sums">Qual '+fmt(cs.sumQ)+'% · Cond '+fmt(cs.sumC)+'%</div><span id="sample-pill">'+pill(cs.grade)+'</span></div>'+ 
+    '<div class="evidence-card"><div class="evidence-head"><div><strong>Photo evidence</strong><span>Take, review, and label photos without leaving this row.</span></div></div><div class="field"><label>Next photo type</label><select id="photo-tag">'+tagOpts+'</select></div><div class="row-actions"><button class="btn btn-primary btn-sm" style="flex:1" onclick=\'triggerPhoto("sample-photo-cam")\'>&#128247; Take photo</button><button class="btn btn-ghost btn-sm" style="flex:1" onclick=\'triggerPhoto("sample-photo-gal")\'>Library</button></div><input type="file" id="sample-photo-cam" accept="image/*" capture="environment" style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this,"'+s.id+'")\'><input type="file" id="sample-photo-gal" accept="image/*" multiple style="display:none" onchange=\'handlePhoto("'+insp.id+'","'+p.id+'",this,"'+s.id+'")\'><div class="photo-mini-grid" id="sample-photo-grid"></div></div>'+ 
+    '<div class="card"><div class="field" style="margin-bottom:0"><label>Sample size (fruit inspected)</label><input type="number" inputmode="numeric" value="'+esc(s.size)+'" onfocus="this.select()" oninput=\'setSize("'+insp.id+'","'+p.id+'","'+s.id+'",this.value)\'></div></div>'+ 
+    '<div class="section-note">Default Quality and Condition names remain in place. Tap the pencil beside any field to customize it for this inspection without changing its saved count.</div><div class="defect-group-title">Inspection counts</div>'+rows+
+    '<div style="height:8px"></div><button class="btn btn-primary btn-block" onclick=\'addPallet("'+insp.id+'")\'>+ Add new blank inspection row</button><button class="btn btn-danger btn-block" style="margin-top:10px" onclick=\'delSample("'+insp.id+'","'+p.id+'","'+s.id+'")\'>Delete inspection row</button>';
+};
+
 window.addEventListener("pagehide",flushCurrentInput);
 window.addEventListener("beforeunload",flushCurrentInput);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushCurrentInput();});
 migrateWorkflowV9();
 migrateWorkflowV10();
+migrateWorkflowV11();
 render();
 </script>
 </body>

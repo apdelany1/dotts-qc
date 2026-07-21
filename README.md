@@ -1,19 +1,18 @@
-# QCapp v10 — GitHub Pages PWA
+# QCapp v11 — Unified Row Entry
 
 This update is ready to upload to the existing `proto-qc` repository.
 
-## New in v10
+## New in v11
 
-- Replace Document ID with a **Manifest / reference** field.
-- Attach PDF, XLS, XLSX, or CSV files to an inspection for offline access.
-- Rename each pulp and ambient temperature reading while retaining live Fahrenheit/Celsius conversion.
-- Categorize photos during review.
-- Cut Sample photos receive **Seed count (%)** and freeform internal-condition remarks.
-- Defect photos retain optional field/count mapping; unrelated photo types do not show those controls.
-- The camera workflow can immediately open the iPhone share sheet with the original file. iOS still requires the user to choose **Save Image**.
-- **+ Row** shortcut appears in the Pallets area. Every new row is blank, opens at the top of Row Details, and focuses the Pallet ID field.
-- New rows no longer copy labels or metadata from the prior row.
-- Existing autosave, return-to-last-row, PDF photo pagination, templates, photos, and inspection data are preserved.
+- Combines Row Details, photos, sample size, and inspection counts into one continuous page.
+- Every new row opens at the top and focuses the Pallet ID field.
+- Removes the separate **Continue to inspection fields** step.
+- Keeps default temperature names, with a pencil button to rename or reset each reading.
+- Keeps default Quality and Condition field names, with a pencil button to customize them for the current inspection.
+- Renaming a field never changes its stored count or internal field key.
+- Custom field names carry into photo defect selectors and report rankings.
+- Saves and restores the last scroll position for each inspection row when switching tabs.
+- Existing photos, documents, inspections, templates, counts, and report pagination are preserved.
 
 ## Deploy
 
@@ -28,7 +27,7 @@ https://apdelany1.github.io/proto-qc/
 After deployment, test with:
 
 ```text
-https://apdelany1.github.io/proto-qc/?v=10
+https://apdelany1.github.io/proto-qc/?v=11
 ```
 
 Completely close and reopen an installed iPhone home-screen copy after GitHub finishes deploying.

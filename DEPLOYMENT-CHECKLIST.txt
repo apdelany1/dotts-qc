@@ -1,15 +1,10 @@
-QCAPP V10 DEPLOYMENT CHECKLIST
+QCapp v11 deployment checklist
 
-1. Open the GitHub repository for https://apdelany1.github.io/proto-qc/
-2. Choose Add file > Upload files.
-3. Upload everything inside this folder and replace matching files.
-4. Commit with: Add manifest, photo, temperature, and row workflow upgrades
-5. Wait for GitHub Pages to deploy.
-6. Test: https://apdelany1.github.io/proto-qc/?v=10
-7. Completely close and reopen the iPhone home-screen app.
-8. Verify:
-   - Manifest PDF/Excel attachment opens offline after first import.
-   - Temperature labels can be renamed and °F/°C remain synchronized.
-   - Cut Samples shows seed percentage and remarks, not linked-count fields.
-   - + Row opens a blank Row Details screen focused on Pallet ID.
-   - Existing inspections and photos remain present.
+1. Upload every file in this folder to the root of the proto-qc repository.
+2. Replace index.html, sw.js, manifest.webmanifest, README.md, and existing icon files.
+3. Commit the changes.
+4. Wait for GitHub Pages deployment to finish.
+5. Test https://apdelany1.github.io/proto-qc/?v=11
+6. On iPhone, completely close and reopen the home-screen app.
+7. Verify one page contains Row Details, Photos, Sample Size, and Inspection Counts.
+8. Rename a temperature and a defect, switch tabs, return, and confirm the names and counts remain.

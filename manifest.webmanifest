@@ -2,7 +2,7 @@
   "id": "./",
   "name": "QCapp \u2014 Produce Inspection",
   "short_name": "QCapp",
-  "description": "Offline-first produce inspections with blank inspection rows, editable temperatures, manifest attachments, categorized photo evidence, and reports.",
+  "description": "Offline-first produce inspections with unified row entry, editable labels, documents, categorized photo evidence, and reports.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
