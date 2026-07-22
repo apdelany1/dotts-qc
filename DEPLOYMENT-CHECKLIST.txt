@@ -1,10 +1,18 @@
-QCapp v11 deployment checklist
+QCapp v12 deployment checklist
 
 1. Upload every file in this folder to the root of the proto-qc repository.
-2. Replace index.html, sw.js, manifest.webmanifest, README.md, and existing icon files.
-3. Commit the changes.
-4. Wait for GitHub Pages deployment to finish.
-5. Test https://apdelany1.github.io/proto-qc/?v=11
-6. On iPhone, completely close and reopen the home-screen app.
-7. Verify one page contains Row Details, Photos, Sample Size, and Inspection Counts.
-8. Rename a temperature and a defect, switch tabs, return, and confirm the names and counts remain.
+2. Replace index.html, sw.js, manifest.webmanifest, README.md, and the existing icon files.
+3. Commit the changes and wait for GitHub Pages to finish deploying.
+4. Open https://apdelany1.github.io/proto-qc/?v=12
+5. On iPhone, completely close and reopen the installed home-screen app.
+6. Start a new inspection and confirm Grading is off by default.
+7. Add packaging once on Details, then confirm it is selectable on an inspection row.
+8. Import a CSV or .xlsx manifest, filter to one container, select multiple rows, and import them.
+9. Open a row and confirm Pallet ID, photos, sample size, cut sample, defect counts, and status are on one page.
+10. Set a sample size of 5 and confirm primary defect counts cannot total more than 5.
+11. Use “Box 2 from same pallet” and confirm the second row is labeled correctly.
+12. Mark the cut sample complete, finish the row, and confirm progress updates.
+13. Add at least two photos, reorder them, and test Share / Save Image on iPhone.
+14. Delete a test row or photo and confirm Undo restores it.
+15. Open Report and confirm Final Review flags missing details before completion.
+16. Test the app once in airplane mode after it has loaded successfully online.
